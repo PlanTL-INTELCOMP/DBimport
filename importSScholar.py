@@ -46,7 +46,7 @@ def main(resetDB=False):
         bar = Bar('Inserting papers in Mongo Database', max=len(gz_files))
         for gzf in gz_files:
             bar.next()
-            with gzip.open(gzf, 'rt') as f:
+            with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
         bar.finish()
