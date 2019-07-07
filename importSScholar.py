@@ -49,6 +49,7 @@ def main(resetDB=False):
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
+                ipdb.set_trace()
         bar.finish()
 
 
