@@ -172,7 +172,7 @@ class S2manager(BaseDMsql):
         df.sort_values(by=['id', 'counts'], ascending=False, inplace=True)
         #We get rid of duplicates, keeping first element (max counts)
         df.drop_duplicates(subset='id', keep='first', inplace=True)
-        self.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist())
+        self.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist(), chunksize=25000, verbose=True)
         
         # We extract venues and journals as dictionaries for inserting new data in tables
         df = self.readDBtable('S2venues', selectOptions='venue, venueID')
@@ -195,9 +195,9 @@ class S2manager(BaseDMsql):
             """
             if 'year' in paperEntry.keys():
                 paper_list = [[paperEntry['id'],
-                          paperEntry['title'],
-                          paperEntry['title'].lower(),
-                          paperEntry['paperAbstract'],
+                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8"),
+                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8").lower(),
+                          paperEntry['paperAbstract'].decode('utf-8','ignore').encode("utf-8"),
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -214,9 +214,9 @@ class S2manager(BaseDMsql):
                           ]]
             else:
                 paper_list = [[paperEntry['id'],
-                          paperEntry['title'],
-                          paperEntry['title'].lower(),
-                          paperEntry['paperAbstract'],
+                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8"),
+                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8").lower(),
+                          paperEntry['paperAbstract'].decode('utf-8','ignore').encode("utf-8"),
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -240,7 +240,8 @@ class S2manager(BaseDMsql):
             return paper_list, author_list, cite_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        bar = Bar('Extracting all venues, journalNames, and valid authors', max=len(gz_files))
+        print('\n')
+        bar = Bar('Extracting paper information', max=len(gz_files))
         for fileno, gzf in enumerate(gz_files[:3]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
@@ -260,8 +261,8 @@ class S2manager(BaseDMsql):
                 self.insertInTable('S2papers', ['paperID', 'title', 'lowertitle', 
                     'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
                     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
-                    'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers)
-                self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper)
-                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas)
+                    'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers, chunksize=25000, verbose=True)
+                self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=25000, verbose=True)
+                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=25000, verbose=True)
 
         return
