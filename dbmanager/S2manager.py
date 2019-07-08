@@ -86,7 +86,7 @@ class S2manager(BaseDMsql):
         sql_cmd = """CREATE TABLE citations(
 
                         paperID_1 CHAR(40) CHARACTER SET utf8,
-                        paperID_1 CHAR(40) CHARACTER SET utf8,
+                        paperID_2 CHAR(40) CHARACTER SET utf8,
 
                         PRIMARY KEY (paperID1, paperID_2),
 
