@@ -195,9 +195,9 @@ class S2manager(BaseDMsql):
             """
             if 'year' in paperEntry.keys():
                 paper_list = [[paperEntry['id'],
-                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8"),
-                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8").lower(),
-                          paperEntry['paperAbstract'].decode('utf-8','ignore').encode("utf-8"),
+                          paperEntry['title'],
+                          paperEntry['title'].lower(),
+                          paperEntry['paperAbstract'],
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -214,9 +214,9 @@ class S2manager(BaseDMsql):
                           ]]
             else:
                 paper_list = [[paperEntry['id'],
-                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8"),
-                          paperEntry['title'].decode('utf-8','ignore').encode("utf-8").lower(),
-                          paperEntry['paperAbstract'].decode('utf-8','ignore').encode("utf-8"),
+                          paperEntry['title'],
+                          paperEntry['title'].lower(),
+                          paperEntry['paperAbstract'],
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
