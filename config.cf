@@ -1,10 +1,11 @@
 [DB]
 # Connector: mysql
-DB_CONNECTOR = mysql
+dbCONNECTOR = mysql
 dbUSER = PTLprojects
 dbPASS = Kts93_u17a
 dbSERVER = vanir.tsc.uc3m.es
 
 [SemanticScholar]
+dbNAME = 'db_Pr_FECYT'
 data_files = ./data_Pu_S2/20190131/
 
