@@ -242,7 +242,7 @@ class S2manager(BaseDMsql):
                           paperEntry['pmid']
                           ]
 
-            return [str(el) for el in paper_list]
+            return paper_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
@@ -257,31 +257,31 @@ class S2manager(BaseDMsql):
                 lista_papers = [process_paper(el) for el in papers_infile]
 
                 #Populate tables with the new data
-                print('Writing data to file')
-                temp_file = os.path.join(data_files,'tmpfile.csv')
-                with open(temp_file, 'w', encoding='utf8') as fout:
-                    [fout.write('*****'.join(el).replace('\n', '. ') + '\n') for el in lista_papers]
+                self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
+                    'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
+                    'venueID', 'journalNameID', 'journalVolume', 'journalPages',
+                    'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
+                    chunksize=50000, verbose=True)
 
-                sql_cmd = """
-                    LOAD DATA LOCAL INFILE '%s'
-                    INTO TABLE S2papers
-                    FIELDS TERMINATED BY '*****'
-                    LINES TERMINATED BY '\n'
-                    (S2paperID, title, lowertitle, paperAbstract, entities, s2PdfUrl, pdfUrls,
-                     year, venueID, journalNameID, 'journalVolume, journalPages,
-                     isDBLP, isMedline, doi, doiUrl, pmid)
-                """
-                sql_cmd = sql_cmd %(temp_file)
-                print(sql_cmd)
-                self._c.execute(sql_cmd)
-                self._conn.commit()
-                os.remove(temp_file)
+                # print('Writing data to file')
+                # temp_file = os.path.join(data_files,'tmpfile.csv')
+                # with open(temp_file, 'w', encoding='utf8') as fout:
+                #     [fout.write('*****'.join(el).replace('\n', '. ') + '\n') for el in lista_papers]
 
-                # self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-                #     'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
-                #     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
-                #     'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
-                #     chunksize=25000, verbose=True)
+                # sql_cmd = """
+                #     LOAD DATA LOCAL INFILE '%s'
+                #     INTO TABLE S2papers
+                #     FIELDS TERMINATED BY '*****'
+                #     LINES TERMINATED BY '\n'
+                #     (S2paperID, title, lowertitle, paperAbstract, entities, s2PdfUrl, pdfUrls,
+                #      year, venueID, journalNameID, journalVolume, journalPages,
+                #      isDBLP, isMedline, doi, doiUrl, pmid)
+                # """
+                # sql_cmd = sql_cmd %(temp_file)
+                # print(sql_cmd)
+                # self._c.execute(sql_cmd)
+                # self._conn.commit()
+                # os.remove(temp_file)
 
         df = self.readDBtable('S2papers', selectOptions= 'S2paperID, paperID')
         ipdb.set_trace()
