@@ -38,7 +38,8 @@ class S2manager(BaseDMsql):
 
         sql_cmd = """CREATE TABLE S2papers(
 
-                        paperID CHAR(40) CHARACTER SET utf8 PRIMARY KEY,
+                        paperID INT UNSIGNED PRIMARY KEY,
+                        S2paperID CHAR(40) CHARACTER SET utf8,
                         
                         title VARCHAR(300) CHARACTER SET utf8,
                         lowertitle VARCHAR(300) CHARACTER SET utf8,
@@ -97,18 +98,18 @@ class S2manager(BaseDMsql):
 
         # self._c.execute(sql_cmd)
 
-        sql_cmd = """CREATE TABLE citations(
+        # sql_cmd = """CREATE TABLE citations(
 
-                        paperID1 CHAR(40) CHARACTER SET utf8,
-                        paperID2 CHAR(40) CHARACTER SET utf8,
+        #                 paperID1 INT UNSIGNED,
+        #                 paperID2 INT UNSIGNED,
 
-                        PRIMARY KEY (paperID1, paperID2),
+        #                 PRIMARY KEY (paperID1, paperID2),
 
-                        isInfluential TINYINT(1)
+        #                 isInfluential TINYINT(1)
 
-                        )"""
+        #                 )"""
 
-        self._c.execute(sql_cmd)
+        # self._c.execute(sql_cmd)
 
         sql_cmd = """CREATE TABLE S2venues(
 
@@ -181,7 +182,7 @@ class S2manager(BaseDMsql):
         df.sort_values(by=['id', 'counts'], ascending=False, inplace=True)
         #We get rid of duplicates, keeping first element (max counts)
         df.drop_duplicates(subset='id', keep='first', inplace=True)
-        self.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist(), chunksize=25000, verbose=True)
+        self.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist(), chunksize=100000, verbose=True)
         
         # We extract venues and journals as dictionaries for inserting new data in tables
         df = self.readDBtable('S2venues', selectOptions='venue, venueID')
@@ -197,13 +198,14 @@ class S2manager(BaseDMsql):
             else:
                 return 0
 
-        def process_paper(paperEntry):
+        def process_paper(paperEntry, paper_nr):
             """This function takes a dictionary with paper information as input
             and returns three lists ready to insert in 
             S2papers, PaperAuthor, and citations tables
             """
             if 'year' in paperEntry.keys():
-                paper_list = [[paperEntry['id'],
+                paper_list = [[paper_nr,
+                          paperEntry['id'],
                           regex.sub(' ', paperEntry['title']),
                           regex.sub(' ', paperEntry['title'].lower()),
                           regex.sub(' ', paperEntry['paperAbstract']),
@@ -222,7 +224,8 @@ class S2manager(BaseDMsql):
                           paperEntry['pmid']
                           ]]
             else:
-                paper_list = [[paperEntry['id'],
+                paper_list = [[paper_nr,
+                          paperEntry['id'],
                           regex.sub(' ', paperEntry['title']),
                           regex.sub(' ', paperEntry['title'].lower()),
                           regex.sub(' ', paperEntry['paperAbstract']),
@@ -251,6 +254,7 @@ class S2manager(BaseDMsql):
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
         bar = Bar('Extracting paper information', max=len(gz_files))
+        current_paper = 0
         for fileno, gzf in enumerate(gz_files[:3]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
@@ -261,17 +265,19 @@ class S2manager(BaseDMsql):
                 lista_author_paper = []
                 lista_citas = []
                 for paper in papers_infile:
-                    lp, lap, lc = process_paper(paper)
+                    lp, lap, lc = process_paper(paper, current_paper)
+                    current_paper +=1
                     lista_papers += lp
                     lista_author_paper += lap
                     lista_citas += lc
 
                 #Populate tables with the new data
-                self.insertInTable('S2papers', ['paperID', 'title', 'lowertitle', 
+                self.insertInTable('S2papers', ['paperID', 'S2paperID', 'title', 'lowertitle', 
                     'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
                     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
-                    'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers, chunksize=25000, verbose=True)
+                    'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
+                    chunksize=25000, verbose=True)
                 #self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=25000, verbose=True)
-                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
+                #self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
 
         return
