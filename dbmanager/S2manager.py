@@ -11,13 +11,7 @@ Created on Jul 7 2019
 import os
 import pandas as pd
 import numpy as np
-import copy
-import requests
-import ipdb
 from progress.bar import Bar
-
-# Tools for language detection and translation
-from langid.langid import LanguageIdentifier, model
 from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
 
