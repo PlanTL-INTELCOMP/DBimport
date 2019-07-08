@@ -107,7 +107,7 @@ class S2manager(BaseDMsql):
 
         sql_cmd = """CREATE TABLE S2journals(
 
-                        journalNameID SMALLINT UNSIGNED AUTO_INCREMENT,
+                        journalNameID SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         journalName VARCHAR(300) CHARACTER SET utf8
                         
                         )"""
