@@ -17,6 +17,7 @@ import json
 import numpy as np
 import ipdb
 from collections import Counter
+import pandas as pd
 
 from dbmanager.S2manager import S2manager
 
@@ -75,7 +76,7 @@ def main(resetDB=False, importData=False):
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         bar = Bar('Extracting all venues, journalNames, and valid authors', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[:10]):
+        for fileno, gzf in enumerate(gz_files[:3]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -102,16 +103,20 @@ def main(resetDB=False, importData=False):
         DB.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
         DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
 
-        # We insert author data in table
-        # First we get unique authors in list
-        ipdb.set_trace()
-
+        # We insert author data in table but we need to get rid of duplicated ids
+        id_name_count = [[el[0], el[1], z1[el]] for el in author_counts]
+        df = pd.DataFrame(id_name_count, columns=['id', 'name', 'counts'])
+        #sort according to 'id' and then by 'counts'
+        df.sort_values(by=['id', 'counts'], ascending=False, inplace=True)
+        #We get rid of duplicates, keeping first element (max counts)
+        df.drop_duplicates(subset='id', keep='first', inplace=True)
+        DB.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist())
+        
         # We extract venues and journals as dictionaries for inserting new data in tables
         df = DB.readDBtable('S2venues', selectOptions='venue, venueID')
         venues_dict = dict(df.values.tolist())
         df = DB.readDBtable('S2journals', selectOptions='journalName, journalNameID')
         journals_dict = dict(df.values.tolist())
-        
         
 
     """
