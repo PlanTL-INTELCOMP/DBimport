@@ -98,7 +98,7 @@ class S2manager(BaseDMsql):
 
         sql_cmd = """CREATE TABLE S2venues(
 
-                        venueID MEDIUMINT UNSIGNED AUTO_INCREMENT,
+                        venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         venue VARCHAR(300) CHARACTER SET utf8
                         
                         )"""
