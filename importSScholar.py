@@ -80,6 +80,7 @@ def main(resetDB=False, importData=False):
 
                 # We extract venues and journals, getting rid of repetitions
                 all_venues += [el['venue'] for el in papers_infile]
+                ipdb.set_trace()
                 all_venues = list(set(all_venues))
                 all_journals += [el['journalName'] for el in papers_infile]
                 all_journals = list(set(all_journals))
