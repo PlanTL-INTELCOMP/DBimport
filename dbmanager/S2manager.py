@@ -139,7 +139,7 @@ class S2manager(BaseDMsql):
         Import data from Semantic Scholar compressed data files
         available at the indicated location
         """
-
+        #STEP 1
         #We need to pass through all data files first to import venues and journalNames
         #We populate also the authors table
         all_venues = []
@@ -190,8 +190,11 @@ class S2manager(BaseDMsql):
         df = self.readDBtable('S2journals', selectOptions='journalName, journalNameID')
         journals_dict = dict(df.values.tolist())
 
-        # Now we need to read all files again, this time importing data
-        # to the S2papers, citations, and PaperAuthor tables
+        # STEP 2
+        # Now we need to read all files again, this time importing paper data
+        # Note that papers are stored in database with a new index in addition to S2ID
+        # this is useful because it will reduce indexing time and will also reduce
+        # the size of citations and PaperAuthor table to be filled in STEP 3
         def ElementInList(source_list, search_string):
             if search_string in source_list:
                 return 1
@@ -200,8 +203,7 @@ class S2manager(BaseDMsql):
 
         def process_paper(paperEntry):
             """This function takes a dictionary with paper information as input
-            and returns three lists ready to insert in 
-            S2papers, PaperAuthor, and citations tables
+            and returns a list to insert in S2papers
             """
             if 'year' in paperEntry.keys():
                 paper_list = [paperEntry['id'],
@@ -263,6 +265,9 @@ class S2manager(BaseDMsql):
                     'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
                     chunksize=50000, verbose=True)
 
+                # Alternative version loading data from file. Slightly faster
+                # but there are some errors deriving from empty fields, etc
+
                 # print('Writing data to file')
                 # temp_file = os.path.join(data_files,'tmpfile.csv')
                 # with open(temp_file, 'w', encoding='utf8') as fout:
@@ -283,50 +288,50 @@ class S2manager(BaseDMsql):
                 # self._conn.commit()
                 # os.remove(temp_file)
 
+        # Next, we need to create a dictionary to access the paperID 
+        # corresponding to each S2paperID
+        print('Generating S2 to ID dictionary')
         df = self.readDBtable('S2papers', selectOptions= 'S2paperID, paperID')
-        ipdb.set_trace()
+        S2_to_ID = dict(df.values.tolist())
+
+        # STEP 3
+        # A final pass is needed to fill in tables citations and PaperAuthor
+
+        def process_AuthorshipCitations(paperEntry):
+            """This function takes a dictionary with paper information as input
+            and returns two lists ready to insert in PaperAuthor, and citations tables
+            """
+            author_list = [[S2_to_ID[paperEntry['id']], el['ids'][0]] 
+                            for el in paperEntry['authors'] if len(el['ids'])]
+
+            try:
+                cite_list = [[S2_to_ID[paperEntry['id']], s2_to_ID[el]] 
+                    for el in paperEntry['outCitations']]
+            except:
+                cite_list = []
+
+            return author_list, cite_list
+
+        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
+        print('\n')
+        bar = Bar('Filling in citationa and authorship information', max=len(gz_files))
+        for fileno, gzf in enumerate(gz_files[:3]):
+            bar.next()
+            with gzip.open(gzf, 'rt', encoding='utf8') as f:
+                papers_infile = f.read().replace('}\n{','},{')
+                papers_infile = json.loads('['+papers_infile+']')
+
+                lista_author_paper = []
+                lista_citas = []
+                for paper in papers_infile:
+                    lap, lc = process_AuthorshipCitations(paper)
+                    lista_author_paper += lap
+                    lista_citas += lc
+
+                #Populate tables with the new data
+                self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
+                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
 
         return
 
-
-        # def process_AuthorshipCitations(paperEntry):
-        #     """This function takes a dictionary with paper information as input
-        #     and returns three lists ready to insert in 
-        #     S2papers, PaperAuthor, and citations tables
-        #     """
-        #     author_list = [[paperEntry['id'], el['ids'][0]] 
-        #                     for el in paperEntry['authors'] if len(el['ids'])]
-
-        #     cite_list = [[paperEntry['id'], el] for el in paperEntry['outCitations']]
-
-        #     return paper_list, author_list, cite_list
-
-        # gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        # print('\n')
-        # bar = Bar('Extracting paper information', max=len(gz_files))
-        # current_paper = 0
-        # for fileno, gzf in enumerate(gz_files[:3]):
-        #     bar.next()
-        #     with gzip.open(gzf, 'rt', encoding='utf8') as f:
-        #         papers_infile = f.read().replace('}\n{','},{')
-        #         papers_infile = json.loads('['+papers_infile+']')
-
-        #         lista_papers = []
-        #         lista_author_paper = []
-        #         lista_citas = []
-        #         for paper in papers_infile:
-        #             lp, lap, lc = process_paper(paper)
-        #             current_paper +=1
-        #             lista_papers += lp
-        #             lista_author_paper += lap
-        #             lista_citas += lc
-
-        #         #Populate tables with the new data
-        #         self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-        #             'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
-        #             'venueID', 'journalNameID', 'journalVolume', 'journalPages',
-        #             'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
-        #             chunksize=25000, verbose=True)
-        #         #self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=25000, verbose=True)
-        #         #self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
 
