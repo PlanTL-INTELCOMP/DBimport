@@ -21,7 +21,7 @@ from langid.langid import LanguageIdentifier, model
 from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
 
-class S2manager(BaseDMsql)
+class S2manager(BaseDMsql):
 
     def createDBschema(self):
         """
