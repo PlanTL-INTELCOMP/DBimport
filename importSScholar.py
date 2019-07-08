@@ -67,12 +67,14 @@ def main(resetDB=False, importData=False):
         print('Importing data ...')
 
         #We need to pass through all data files first to import venues and journalNames
+        #We populate also the authors table
         all_venues = []
         all_journals = []
+        list_authors = []
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        bar = Bar('Extracting all venues and journalNames', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[:3]):
+        bar = Bar('Extracting all venues, journalNames, and valid authors', max=len(gz_files))
+        for fileno, gzf in enumerate(gz_files[:10]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -80,10 +82,15 @@ def main(resetDB=False, importData=False):
 
                 # We extract venues and journals, getting rid of repetitions
                 all_venues += [el['venue'] for el in papers_infile]
-                ipdb.set_trace()
                 all_venues = list(set(all_venues))
                 all_journals += [el['journalName'] for el in papers_infile]
                 all_journals = list(set(all_journals))
+
+                for el in papers_infile:
+                    if len(el['authors']):
+                        for author in el['authors']:
+                            if len(author['ids']):
+                                list_authors.append((author['ids'][0], author['name']))
 
         # We sort data in alphabetical order and insert in table
         all_venues.sort()
@@ -91,7 +98,13 @@ def main(resetDB=False, importData=False):
         DB.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
         DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
 
+        df = DB.readDBtable('S2venues', selectOptions='venue, venueID')
+        venues_dict = dict(df.values.tolist())
+        df = DB.readDBtable('S2journals', selectOptions='journalName, journalNameID')
+        journals_dict = dict(df.values.tolist())
+        ipdb.set_trace()
 
+        #Now, we are ready 
 
 
     """
