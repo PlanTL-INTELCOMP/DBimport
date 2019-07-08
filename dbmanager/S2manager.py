@@ -41,8 +41,8 @@ class S2manager(BaseDMsql):
                         journalVolume VARCHAR(300) CHARACTER SET utf8,
                         journalPages VARCHAR(100) CHARACTER SET utf8,
 
-                        isDBLP VARCHAR(1) TINYINT,
-                        isMedline VARCHAR(1) TINYINT,
+                        isDBLP TINYINT,
+                        isMedline TINYINT,
 
                         doi VARCHAR(128) CHARACTER SET utf8,
                         doiUrl VARCHAR(128) CHARACTER SET utf8,
