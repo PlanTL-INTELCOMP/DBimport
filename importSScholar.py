@@ -48,8 +48,6 @@ def main(resetDB=False):
     ####################################################
     #1. Database connection
 
-    ipdb.set_trace()
-
     DB = S2manager (db_name=dbNAME, db_connector=dbCONNECTOR, path2db=None,
                     db_server=dbSERVER, db_user=dbUSER, db_password=dbPASS)
     #               db_port=dbPORT)
