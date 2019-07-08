@@ -242,7 +242,7 @@ class S2manager(BaseDMsql):
                           paperEntry['pmid']
                           ]
 
-            return paper_list
+            return [str(el) for el in paper_list]
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
@@ -257,6 +257,7 @@ class S2manager(BaseDMsql):
                 lista_papers = [process_paper(el) for el in papers_infile]
 
                 #Populate tables with the new data
+                print('Writing data to file')
                 temp_file = os.path.join(data_files,'tmpfile.csv')
                 with open(temp_file, 'w', encoding='utf8') as fout:
                     [fout.write('*****'.join(el).replace('\n', '. ') + '\n') for el in lista_papers]
