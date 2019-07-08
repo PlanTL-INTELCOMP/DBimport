@@ -72,7 +72,7 @@ def main(resetDB=False, importData=False):
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         bar = Bar('Extracting all venues and journalNames', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[:10]):
+        for fileno, gzf in enumerate(gz_files[:3]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
