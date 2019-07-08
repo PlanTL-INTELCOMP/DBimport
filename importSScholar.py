@@ -16,6 +16,7 @@ import gzip
 import json
 import numpy as np
 import ipdb
+from collections import Counter
 
 from dbmanager.S2manager import S2manager
 
@@ -97,6 +98,14 @@ def main(resetDB=False, importData=False):
         all_journals.sort()
         DB.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
         DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
+
+        # We insert author data in table
+        # First we get unique authors in list
+        set_authors = list(set(list_authors))
+        list_ids = [el[0] for el in set_authors]
+        counts = Counter(list_ids)
+        repeated_ids = [el for el in counts.keys() if counts['el']>1]
+        
 
         df = DB.readDBtable('S2venues', selectOptions='venue, venueID')
         venues_dict = dict(df.values.tolist())
