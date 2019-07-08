@@ -7,5 +7,5 @@ dbSERVER = vanir.tsc.uc3m.es
 
 [SemanticScholar]
 dbNAME = db_Pu_S2
-data_files = ./data_Pu_S2/20190131/
+data_files = /export/usuarios_ml4ds/jarenas/github/DBimport/data_Pu_S2/20190131/
 
