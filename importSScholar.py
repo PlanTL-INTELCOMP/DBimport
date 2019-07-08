@@ -14,8 +14,10 @@ from progress.bar import Bar
 import os
 import gzip
 import json
-import ipdb
 import numpy as np
+
+from dbmanager.S2manager import S2manager
+
 #from tika import parser as tikaparser
 #from bs4 import BeautifulSoup
 
