@@ -24,7 +24,7 @@ from dbmanager.S2manager import S2manager
 
 #from lemmatizer.ENlemmatizer import ENLemmatizer
 
-def main(resetDB=False):
+def main(resetDB=False, importData=False):
     """
     """
 
@@ -60,6 +60,37 @@ def main(resetDB=False):
         # again without data
         DB.deleteDBtables()
         DB.createDBschema()
+
+    ####################################################
+    #3. If activated, data will be imported from S2 data files
+    if importData:
+        print('Importing data ...')
+
+        #We need to pass through all data files first to import venues and journalNames
+        all_venues = []
+        all_journals = []
+
+        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
+        bar = Bar('Extracting all venues and journalNames', max=len(gz_files))
+        for fileno, gzf in enumerate(gz_files[:3]):
+            bar.next()
+            with gzip.open(gzf, 'rt', encoding='utf8') as f:
+                papers_infile = f.read().replace('}\n{','},{')
+                papers_infile = json.loads('['+papers_infile+']')
+
+                # We extract venues and journals, getting rid of repetitions
+                all_venues += [el['venue'] for el in papers_infile]
+                all_venues = list(set(all_venues))
+                all_journals += [el['journalName'] for el in papers_infile]
+                all_journals = list(set(all_journals))
+
+                # We sort data in alphabetical order and insert in table
+                all_venues.sort()
+                all_journals.sort()
+                DB.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
+                DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
+
+
 
 
     """
@@ -173,6 +204,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog='importSScholar')    
     parser.add_argument('--resetDB', action='store_true', help='If activated, the database will be reset and re-created')
+    parser.add_argument('--importData', action='store_true', help='If activated, import data')
     args = parser.parse_args()
 
-    main(resetDB=args.resetDB)
+    main(resetDB=args.resetDB, importData=args.importData)
