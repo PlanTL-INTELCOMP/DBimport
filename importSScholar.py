@@ -85,11 +85,11 @@ def main(resetDB=False, importData=False):
                 all_journals += [el['journalName'] for el in papers_infile]
                 all_journals = list(set(all_journals))
 
-                # We sort data in alphabetical order and insert in table
-                all_venues.sort()
-                all_journals.sort()
-                DB.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
-                DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
+        # We sort data in alphabetical order and insert in table
+        all_venues.sort()
+        all_journals.sort()
+        DB.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
+        DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
 
 
 
