@@ -41,15 +41,15 @@ class S2manager(BaseDMsql):
                         journalVolume VARCHAR(300) CHARACTER SET utf8,
                         journalPages VARCHAR(100) CHARACTER SET utf8,
 
-                        isDBLP VARCHAR(1) TINYINT(1),
-                        isMedline VARCHAR(1) TINYINT(1),
+                        isDBLP VARCHAR(1) TINYINT,
+                        isMedline VARCHAR(1) TINYINT,
 
                         doi VARCHAR(128) CHARACTER SET utf8,
                         doiUrl VARCHAR(128) CHARACTER SET utf8,
                         pmid VARCHAR(16) CHARACTER SET utf8,
 
-                        ESP_contri TINYINT(1),
-                        AIselection TINYINT(1),
+                        ESP_contri TINYINT,
+                        AIselection TINYINT,
 
                         LEMAS MEDIUMTEXT,
                         LEMAS_STW MEDIUMTEXT
@@ -63,7 +63,7 @@ class S2manager(BaseDMsql):
                         authorID VARCHAR(10) CHARACTER SET utf8 PRIMARY KEY,
                         name VARCHAR(256) CHARACTER SET utf8,
                         influentialCitationCount SMALLINT UNSIGNED,
-                        ESP_affiliation TINYINT(1)
+                        ESP_affiliation TINYINT
 
                         )"""
 
@@ -88,9 +88,9 @@ class S2manager(BaseDMsql):
                         paperID_1 CHAR(40) CHARACTER SET utf8,
                         paperID_1 CHAR(40) CHARACTER SET utf8,
 
-                        PRIMARY KEY (paperID1, paperID_2)
+                        PRIMARY KEY (paperID1, paperID_2),
 
-                        isInfluential TINYINT(1)
+                        isInfluential TINYINT
 
                         )"""
 
