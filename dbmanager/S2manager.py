@@ -38,7 +38,7 @@ class S2manager(BaseDMsql):
 
         sql_cmd = """CREATE TABLE S2papers(
 
-                        paperID CHAR(40) CHARACTER SET utf8,
+                        paperID CHAR(40) CHARACTER SET utf8 PRIMARY KEY,
                         
                         title VARCHAR(300) CHARACTER SET utf8,
                         lowertitle VARCHAR(300) CHARACTER SET utf8,
@@ -102,7 +102,7 @@ class S2manager(BaseDMsql):
                         paperID1 CHAR(40) CHARACTER SET utf8,
                         paperID2 CHAR(40) CHARACTER SET utf8,
 
-                        # PRIMARY KEY (paperID1, paperID2),
+                        PRIMARY KEY (paperID1, paperID2),
 
                         isInfluential TINYINT(1)
 
@@ -272,6 +272,6 @@ class S2manager(BaseDMsql):
                     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
                     'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers, chunksize=25000, verbose=True)
                 #self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=25000, verbose=True)
-                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=25000, verbose=True)
+                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
 
         return
