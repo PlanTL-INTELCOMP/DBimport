@@ -104,7 +104,7 @@ def main(resetDB=False, importData=False):
         DB.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
 
         # We insert author data in table but we need to get rid of duplicated ids
-        id_name_count = [[el[0], el[1], z1[el]] for el in author_counts]
+        id_name_count = [[el[0], el[1], author_counts[el]] for el in author_counts]
         df = pd.DataFrame(id_name_count, columns=['id', 'name', 'counts'])
         #sort according to 'id' and then by 'counts'
         df.sort_values(by=['id', 'counts'], ascending=False, inplace=True)
