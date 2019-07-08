@@ -19,6 +19,15 @@ from collections import Counter
 
 from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
+import re
+
+try:
+    # UCS-4
+    regex = re.compile('[\U00010000-\U0010ffff]')
+except re.error:
+    # UCS-2
+    regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
+
 
 class S2manager(BaseDMsql):
 
@@ -29,7 +38,7 @@ class S2manager(BaseDMsql):
 
         sql_cmd = """CREATE TABLE S2papers(
 
-                        paperID CHAR(40) CHARACTER SET utf8 PRIMARY KEY,
+                        paperID CHAR(40) CHARACTER SET utf8,
                         
                         title VARCHAR(300) CHARACTER SET utf8,
                         lowertitle VARCHAR(300) CHARACTER SET utf8,
@@ -74,26 +83,26 @@ class S2manager(BaseDMsql):
 
         self._c.execute(sql_cmd)
 
-        sql_cmd = """CREATE TABLE PaperAuthor(
+        # sql_cmd = """CREATE TABLE PaperAuthor(
 
-                        paperID CHAR(40) CHARACTER SET utf8,
-                        authorID VARCHAR(10) CHARACTER SET utf8,
+        #                 paperID CHAR(40) CHARACTER SET utf8,
+        #                 authorID VARCHAR(10) CHARACTER SET utf8,
 
-                        PRIMARY KEY (paperID, authorID),
+        #                 PRIMARY KEY (paperID, authorID),
 
-                        FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
-                        FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
+        #                 FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
+        #                 FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
 
-                        )"""
+        #                 )"""
 
-        self._c.execute(sql_cmd)
+        # self._c.execute(sql_cmd)
 
         sql_cmd = """CREATE TABLE citations(
 
                         paperID1 CHAR(40) CHARACTER SET utf8,
                         paperID2 CHAR(40) CHARACTER SET utf8,
 
-                        PRIMARY KEY (paperID1, paperID2),
+                        # PRIMARY KEY (paperID1, paperID2),
 
                         isInfluential TINYINT(1)
 
@@ -195,9 +204,9 @@ class S2manager(BaseDMsql):
             """
             if 'year' in paperEntry.keys():
                 paper_list = [[paperEntry['id'],
-                          paperEntry['title'],
-                          paperEntry['title'].lower(),
-                          paperEntry['paperAbstract'],
+                          regex.sub(' ', paperEntry['title']),
+                          regex.sub(' ', paperEntry['title'].lower()),
+                          regex.sub(' ', paperEntry['paperAbstract']),
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -214,9 +223,9 @@ class S2manager(BaseDMsql):
                           ]]
             else:
                 paper_list = [[paperEntry['id'],
-                          paperEntry['title'],
-                          paperEntry['title'].lower(),
-                          paperEntry['paperAbstract'],
+                          regex.sub(' ', paperEntry['title']),
+                          regex.sub(' ', paperEntry['title'].lower()),
+                          regex.sub(' ', paperEntry['paperAbstract']),
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -262,7 +271,7 @@ class S2manager(BaseDMsql):
                     'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
                     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
                     'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers, chunksize=25000, verbose=True)
-                self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=25000, verbose=True)
+                #self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=25000, verbose=True)
                 self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=25000, verbose=True)
 
         return
