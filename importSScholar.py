@@ -15,6 +15,7 @@ import os
 import gzip
 import json
 import numpy as np
+import ipdb
 
 from dbmanager.S2manager import S2manager
 
@@ -46,6 +47,8 @@ def main(resetDB=False):
 
     ####################################################
     #1. Database connection
+
+    ipdb.set_trace()
 
     DB = S2manager (db_name=dbNAME, db_connector=dbCONNECTOR, path2db=None,
                     db_server=dbSERVER, db_user=dbUSER, db_password=dbPASS)
