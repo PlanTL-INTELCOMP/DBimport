@@ -346,8 +346,6 @@ class S2manager(BaseDMsql):
                 for paper in papers_infile:
                     lista_citas += process_Citations(paper)
 
-                ipdb.set_trace()
-
                 #Populate table with the new data
                 self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
 
