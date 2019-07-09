@@ -66,7 +66,7 @@ class S2manager(BaseDMsql):
                         ESP_contri TINYINT(1),
                         AIselection TINYINT(1),
 
-                        LEMAS MEDIUMTEXT,
+                        LEMAS MEDIUMTEXT
 
                         )"""
 
