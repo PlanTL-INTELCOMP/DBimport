@@ -326,10 +326,11 @@ class S2manager(BaseDMsql):
             cite_list = []
             for el in paperEntry['outCitations']:
                 try:
+                    ipdb.set_trace()
                     cite_list.append([S2_to_ID[paperEntry['id']], S2_to_ID[el]] 
-                    for el in paperEntry['outCitations'])
+                                for el in paperEntry['outCitations'])
                 except:
-                    pass
+                    ipdb.set_trace()
 
             return cite_list
 
