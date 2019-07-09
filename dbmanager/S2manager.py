@@ -323,11 +323,13 @@ class S2manager(BaseDMsql):
             """This function takes a dictionary with paper information as input
             and a list ready to insert in citations table
             """
-            try:
-                cite_list = [[S2_to_ID[paperEntry['id']], s2_to_ID[el]] 
-                    for el in paperEntry['outCitations']]
-            except:
-                cite_list = []
+            cite_list = []
+            for el in paperEntry['outCitations']:
+                try:
+                    cite_list.append([S2_to_ID[paperEntry['id']], S2_to_ID[el]] 
+                    for el in paperEntry['outCitations'])
+                except:
+                    pass
 
             return cite_list
 
