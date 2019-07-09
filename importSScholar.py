@@ -10,14 +10,6 @@ Import Semantic Scholar Database to Mongo DB
 
 import argparse
 import configparser
-from progress.bar import Bar
-import os
-import gzip
-import json
-import numpy as np
-import ipdb
-from collections import Counter
-import pandas as pd
 
 from dbmanager.S2manager import S2manager
 
@@ -26,7 +18,7 @@ from dbmanager.S2manager import S2manager
 
 #from lemmatizer.ENlemmatizer import ENLemmatizer
 
-def main(resetDB=False, importData=False):
+def main(resetDB=False, importData=False, importCitations=False, importAuthorship=False):
     """
     """
 
@@ -64,89 +56,26 @@ def main(resetDB=False, importData=False):
         DB.createDBschema()
 
     ####################################################
-    #3. If activated, data will be imported from S2 data files
+    # 3. If activated, authors and papers data
+    # will be imported from S2 data files
     if importData:
-        print('Importing data ...')
+        print('Importing papers data ...')
         DB.importData(data_files)
 
+    ####################################################
+    # 4. If activated, citations data
+    # will be imported from S2 data files
+    if importCitations:
+        print('Importing citations data ...')
+        DB.importCitations(data_files)
 
-    """
-    if resetDB:
-        #Now, we start popullating the collection with data
+    ####################################################
+    # 5. If activated, authorship data
+    # will be imported from S2 data files
+    if importAuthorship:
+        print('Importing authorship data ...')
+        DB.importAuthorship(data_files)
 
-
-
-        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        bar = Bar('Inserting papers in Mongo Database', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files):
-            bar.next()
-            with gzip.open(gzf, 'rt', encoding='utf8') as f:
-                papers_infile = f.read().replace('}\n{','},{')
-                papers_infile = json.loads('['+papers_infile+']')
-
-                n_id.append((fileno, sum([1 for el in papers_infile if 'id' in el.keys()])))
-                longest_id.append((fileno, np.max([len(el['id']) for el in papers_infile])))
-                n_title.append((fileno, sum([1 for el in papers_infile if 'title' in el.keys()]) ))
-                longest_title.append((fileno, np.max([len(el['title']) for el in papers_infile])))
-                n_paperAbstract.append((fileno, sum([1 for el in papers_infile if 'paperAbstract' in el.keys()]) ))
-                longest_abstract.append((fileno, np.max([len(el['paperAbstract']) for el in papers_infile])))
-                n_entities.append((fileno, sum([1 for el in papers_infile if 'entities' in el.keys()]) ))
-                longest_entities.append((fileno, np.max([len('\t'.join(el['entities'])) for el in papers_infile])))
-                n_s2PdfUrl.append((fileno, sum([1 for el in papers_infile if 's2PdfUrl' in el.keys()]) ))
-                longest_s2PdfUrl.append((fileno, np.max([len(el['s2PdfUrl']) for el in papers_infile])))
-                n_pdfUrls.append((fileno, sum([1 for el in papers_infile if 'pdfUrls' in el.keys()]) ))
-                longest_pdfUrls.append((fileno, np.max([len('\t'.join(el['pdfUrls'])) for el in papers_infile])))
-                n_authors.append((fileno, sum([1 for el in papers_infile if 'authors' in el.keys()]) ))
-                lg_author_name = 0
-                lg_author_id = 0
-                for el in papers_infile:
-                    if 'authors' in el.keys():
-                        for el2 in el['authors']:
-                            if len(el2['name'])>lg_author_name:
-                                lg_author_name = len(el2['name'])
-                            if len(el2['ids'])==1:
-                                if len(el2['ids'][0])>lg_author_id:
-                                    lg = len(el2['ids'][0])
-                            if len(el2['ids'])>1:
-                                print(el2)
-                longest_author_name.append((fileno, lg_author_name))
-                longest_author_id.append((fileno, lg_author_id))
-                n_inCitations.append((fileno, sum([1 for el in papers_infile if 'inCitations' in el.keys()]) ))
-                n_outCitations.append((fileno, sum([1 for el in papers_infile if 'outCitations' in el.keys()]) ))
-                n_year.append((fileno, sum([1 for el in papers_infile if 'year' in el.keys()]) ))
-                max_year.append((fileno, np.max([el['year'] for el in papers_infile if 'year' in el.keys()])))
-                min_year.append((fileno, np.min([el['year'] for el in papers_infile if 'year' in el.keys()])))
-                n_venue.append((fileno, sum([1 for el in papers_infile if 'venue' in el.keys()]) ))
-                all_venues += [el['venue'] for el in papers_infile]
-                all_venues = list(set(all_venues))
-                n_journalName.append((fileno, sum([1 for el in papers_infile if 'journalName' in el.keys()]) ))
-                all_journals += [el['journalName'] for el in papers_infile]
-                all_journals = list(set(all_journals))
-                n_journalVolume.append((fileno, sum([1 for el in papers_infile if 'journalVolume' in el.keys()]) ))
-                longest_journalVolume.append((fileno, np.max([len(el['journalVolume'].strip()) for el in papers_infile])))
-                n_journalPages.append((fileno, sum([1 for el in papers_infile if 'journalPages' in el.keys()]) ))
-                longest_journalPages.append((fileno, np.max([len(el['journalPages'].strip()) for el in papers_infile])))
-                n_sources.append((fileno, sum([1 for el in papers_infile if 'sources' in el.keys()]) ))
-                lista_vacia = []
-                for el in papers_infile:
-                    lista_vacia += el['sources']
-                lista_vacia = list(set(lista_vacia))
-                all_sources += lista_vacia
-                all_sources = list(set(lista_vacia))
-                n_doi.append((fileno, sum([1 for el in papers_infile if 'doi' in el.keys()]) ))
-                longest_doi.append((fileno, np.max([len(el['doi']) for el in papers_infile])))
-                n_doiUrl.append((fileno, sum([1 for el in papers_infile if 'doiUrl' in el.keys()]) ))
-                longest_doiUrl.append((fileno, np.max([len(el['doiUrl']) for el in papers_infile])))
-                n_pmid.append((fileno, sum([1 for el in papers_infile if 'pmid' in el.keys()]) ))
-                longest_pmid.append((fileno, np.max([len(el['pmid']) for el in papers_infile])))
-
-
-
-        bar.finish()
-
-
-    else:
-        print(data_files, 'false')
 
     return
 
@@ -181,7 +110,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog='importSScholar')    
     parser.add_argument('--resetDB', action='store_true', help='If activated, the database will be reset and re-created')
-    parser.add_argument('--importData', action='store_true', help='If activated, import data')
+    parser.add_argument('--importData', action='store_true', help='If activated, import author and paper data')
+    parser.add_argument('--importCitations', action='store_true', help='If activated, import citation data')
+    parser.add_argument('--importAuthorship', action='store_true', help='If activated, import authorship data')
     args = parser.parse_args()
 
-    main(resetDB=args.resetDB, importData=args.importData)
+    main(resetDB=args.resetDB, importData=args.importData, 
+         importCitations=args.importCitations, importAuthorship=args.importAuthorship)

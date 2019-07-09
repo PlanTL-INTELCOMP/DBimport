@@ -67,7 +67,6 @@ class S2manager(BaseDMsql):
                         AIselection TINYINT(1),
 
                         LEMAS MEDIUMTEXT,
-                        LEMAS_STW MEDIUMTEXT
 
                         )"""
 
@@ -138,6 +137,7 @@ class S2manager(BaseDMsql):
         """
         Import data from Semantic Scholar compressed data files
         available at the indicated location
+        Only author and paper data will be imported
         """
         #STEP 1
         #We need to pass through all data files first to import venues and journalNames
@@ -288,33 +288,108 @@ class S2manager(BaseDMsql):
                 # self._conn.commit()
                 # os.remove(temp_file)
 
-        # Next, we need to create a dictionary to access the paperID 
+        return
+
+    def ImportCitations(self, data_files):
+        """Imports Citation information"""
+
+        # First, we need to create a dictionary to access the paperID 
         # corresponding to each S2paperID
         print('Generating S2 to ID dictionary')
-        df = self.readDBtable('S2papers', selectOptions= 'S2paperID, paperID')
-        S2_to_ID = dict(df.values.tolist())
 
-        # STEP 3
-        # A final pass is needed to fill in tables citations and PaperAuthor
+        chunksize = 100000
+        cont = 0
+        S2_to_ID = {}
+        df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
+                               filterOptions='paperID>0', orderOptions='paperID ASC')
+        while len(df):
+            cont = cont+len(df)
+            #Next time, we will read from the largest retrieved ID. This is the
+            #last element of the dataframe, given that we requested an ordered df
+            smallest_id = df['paperID'][0]
+            largest_id = df['paperID'][len(df)-1]
+            print('Number of elements processed:', cont)
+            print('Last Id read:', largest_id)
+            ID_to_S2_list = df.values.tolist()
+            S2_to_ID_list = [[el[1], el[0]] for el in ID_to_S2_list]
+            aux_dict = dict(S2_to_ID_list)
+            S2_to_ID = {**S2_to_ID, **aux_dict}
+            df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
+                    filterOptions = 'paperID>'+str(largest_id), orderOptions='paperID ASC')
 
-        def process_AuthorshipCitations(paperEntry):
+        # A pass through all data files is needed to fill in tables citations
+
+        def process_Citations(paperEntry):
             """This function takes a dictionary with paper information as input
-            and returns two lists ready to insert in PaperAuthor, and citations tables
+            and a list ready to insert in citations table
             """
-            author_list = [[S2_to_ID[paperEntry['id']], el['ids'][0]] 
-                            for el in paperEntry['authors'] if len(el['ids'])]
-
             try:
                 cite_list = [[S2_to_ID[paperEntry['id']], s2_to_ID[el]] 
                     for el in paperEntry['outCitations']]
             except:
                 cite_list = []
 
-            return author_list, cite_list
+            return cite_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
-        bar = Bar('Filling in citationa and authorship information', max=len(gz_files))
+        bar = Bar('Filling in citations ...', max=len(gz_files))
+        for fileno, gzf in enumerate(gz_files[:3]):
+            bar.next()
+            with gzip.open(gzf, 'rt', encoding='utf8') as f:
+                papers_infile = f.read().replace('}\n{','},{')
+                papers_infile = json.loads('['+papers_infile+']')
+
+                lista_citas = []
+                for paper in papers_infile:
+                    lista_citas += process_Citations(paper)
+
+                #Populate table with the new data
+                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
+
+        return
+
+    def importAuthorship(self, data_files):
+        """Imports Authorship information"""
+
+        # First, we need to create a dictionary to access the paperID 
+        # corresponding to each S2paperID
+        print('Generating S2 to ID dictionary')
+
+        chunksize = 100000
+        cont = 0
+        S2_to_ID = {}
+        df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
+                               filterOptions='paperID>0', orderOptions='paperID ASC')
+        while len(df):
+            cont = cont+len(df)
+            #Next time, we will read from the largest retrieved ID. This is the
+            #last element of the dataframe, given that we requested an ordered df
+            smallest_id = df['paperID'][0]
+            largest_id = df['paperID'][len(df)-1]
+            print('Number of elements processed:', cont)
+            print('Last Id read:', largest_id)
+            ID_to_S2_list = df.values.tolist()
+            S2_to_ID_list = [[el[1], el[0]] for el in ID_to_S2_list]
+            aux_dict = dict(S2_to_ID_list)
+            S2_to_ID = {**S2_to_ID, **aux_dict}
+            df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
+                    filterOptions = 'paperID>'+str(largest_id), orderOptions='paperID ASC')
+
+        # A pass through all data files is needed to fill in table PaperAuthor
+
+        def process_Authorship(paperEntry):
+            """This function takes a dictionary with paper information as input
+            and returns a list ready to insert in PaperAuthor
+            """
+            author_list = [[S2_to_ID[paperEntry['id']], el['ids'][0]] 
+                            for el in paperEntry['authors'] if len(el['ids'])]
+
+            return author_list
+
+        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
+        print('\n')
+        bar = Bar('Filling in authorship information ... ', max=len(gz_files))
         for fileno, gzf in enumerate(gz_files[:3]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
@@ -322,16 +397,11 @@ class S2manager(BaseDMsql):
                 papers_infile = json.loads('['+papers_infile+']')
 
                 lista_author_paper = []
-                lista_citas = []
                 for paper in papers_infile:
-                    lap, lc = process_AuthorshipCitations(paper)
-                    lista_author_paper += lap
-                    lista_citas += lc
-
+                    lista_author_paper += process_Authorship(paper)
+                    
                 #Populate tables with the new data
                 self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
-                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
 
         return
-
 
