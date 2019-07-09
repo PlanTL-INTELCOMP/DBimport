@@ -148,7 +148,7 @@ class S2manager(BaseDMsql):
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         bar = Bar('Extracting all venues, journalNames, and valid authors', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[:3]):
+        for fileno, gzf in enumerate(gz_files):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -250,7 +250,7 @@ class S2manager(BaseDMsql):
         print('\n')
         bar = Bar('Filling in the paper table', max=len(gz_files))
         current_paper = 0
-        for fileno, gzf in enumerate(gz_files[:3]):
+        for fileno, gzf in enumerate(gz_files):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -334,7 +334,7 @@ class S2manager(BaseDMsql):
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
         bar = Bar('Filling in citations ...', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[:3]):
+        for fileno, gzf in enumerate(gz_files):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -390,7 +390,7 @@ class S2manager(BaseDMsql):
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
         bar = Bar('Filling in authorship information ... ', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[:3]):
+        for fileno, gzf in enumerate(gz_files):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
