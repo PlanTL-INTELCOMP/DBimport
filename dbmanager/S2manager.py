@@ -290,7 +290,7 @@ class S2manager(BaseDMsql):
 
         return
 
-    def ImportCitations(self, data_files):
+    def importCitations(self, data_files):
         """Imports Citation information"""
 
         # First, we need to create a dictionary to access the paperID 
