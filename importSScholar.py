@@ -103,8 +103,6 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
     #     bar.finish()
     #     DB.setField('proyectos', 'rcn', 'LEMAS_UC3M_ENG', allLEMAS)
 
-    """
-
 
 if __name__ == "__main__":
 
