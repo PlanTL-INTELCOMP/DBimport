@@ -21,12 +21,12 @@ from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
 import re
 
-try:
-    # UCS-4
-    regex = re.compile('[\U00010000-\U0010ffff]')
-except re.error:
-    # UCS-2
-    regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
+# try:
+#     # UCS-4
+#     regex = re.compile('[\U00010000-\U0010ffff]')
+# except re.error:
+#     # UCS-2
+#     regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
 
 
 class S2manager(BaseDMsql):
@@ -39,61 +39,61 @@ class S2manager(BaseDMsql):
         sql_cmd = """CREATE TABLE S2papers(
 
                         paperID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        S2paperID CHAR(40) CHARACTER SET utf8,
+                        S2paperID CHAR(40),
                         
-                        title VARCHAR(300) CHARACTER SET utf8,
-                        lowertitle VARCHAR(300) CHARACTER SET utf8,
-                        paperAbstract TEXT CHARACTER SET utf8,
-                        entities TEXT CHARACTER SET utf8,
+                        title VARCHAR(300),
+                        lowertitle VARCHAR(300),
+                        paperAbstract TEXT,
+                        entities TEXT,
 
-                        s2PdfUrl VARCHAR(77) CHARACTER SET utf8,
-                        pdfUrls MEDIUMTEXT CHARACTER SET utf8,
+                        s2PdfUrl VARCHAR(77),
+                        pdfUrls MEDIUMTEXT,
 
                         year SMALLINT UNSIGNED,
 
                         venueID MEDIUMINT UNSIGNED,
                         journalNameID SMALLINT UNSIGNED,
-                        journalVolume VARCHAR(300) CHARACTER SET utf8,
-                        journalPages VARCHAR(100) CHARACTER SET utf8,
+                        journalVolume VARCHAR(300),
+                        journalPages VARCHAR(100),
 
                         isDBLP TINYINT(1),
                         isMedline TINYINT(1),
 
-                        doi VARCHAR(128) CHARACTER SET utf8,
-                        doiUrl VARCHAR(128) CHARACTER SET utf8,
-                        pmid VARCHAR(16) CHARACTER SET utf8,
+                        doi VARCHAR(128),
+                        doiUrl VARCHAR(128),
+                        pmid VARCHAR(16),
 
                         ESP_contri TINYINT(1),
                         AIselection TINYINT(1),
 
                         LEMAS MEDIUMTEXT
 
-                        )"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
 
         self._c.execute(sql_cmd)
 
         sql_cmd = """CREATE TABLE S2authors(
 
-                        authorID VARCHAR(10) CHARACTER SET utf8 PRIMARY KEY,
-                        name VARCHAR(256) CHARACTER SET utf8,
+                        authorID VARCHAR(10) PRIMARY KEY,
+                        name VARCHAR(256),
                         influentialCitationCount SMALLINT UNSIGNED,
                         ESP_affiliation TINYINT(1)
 
-                        )"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
 
         self._c.execute(sql_cmd)
 
         sql_cmd = """CREATE TABLE PaperAuthor(
 
                         paperID INT UNSIGNED,
-                        authorID VARCHAR(10) CHARACTER SET utf8,
+                        authorID VARCHAR(10),
 
                         PRIMARY KEY (paperID, authorID),
 
                         FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
                         FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
 
-                        )"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -113,18 +113,18 @@ class S2manager(BaseDMsql):
         sql_cmd = """CREATE TABLE S2venues(
 
                         venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        venue VARCHAR(300) CHARACTER SET utf8
+                        venue VARCHAR(300)
                         
-                        )"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
 
         self._c.execute(sql_cmd)
 
         sql_cmd = """CREATE TABLE S2journals(
 
                         journalNameID SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        journalName VARCHAR(300) CHARACTER SET utf8
+                        journalName VARCHAR(300)
                         
-                        )"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -207,9 +207,9 @@ class S2manager(BaseDMsql):
             """
             if 'year' in paperEntry.keys():
                 paper_list = [paperEntry['id'],
-                          regex.sub(' ', paperEntry['title']),
-                          regex.sub(' ', paperEntry['title'].lower()),
-                          regex.sub(' ', paperEntry['paperAbstract']),
+                          paperEntry['title'],
+                          paperEntry['title'].lower(),
+                          paperEntry['paperAbstract'],
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -226,9 +226,12 @@ class S2manager(BaseDMsql):
                           ]
             else:
                 paper_list = [paperEntry['id'],
-                          regex.sub(' ', paperEntry['title']),
-                          regex.sub(' ', paperEntry['title'].lower()),
-                          regex.sub(' ', paperEntry['paperAbstract']),
+                          # regex.sub(' ', paperEntry['title']),
+                          # regex.sub(' ', paperEntry['title'].lower()),
+                          # regex.sub(' ', paperEntry['paperAbstract']),
+                          paperEntry['title'],
+                          paperEntry['title'].lower(),
+                          paperEntry['paperAbstract'],
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
