@@ -21,12 +21,12 @@ from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
 import re
 
-# try:
-#     # UCS-4
-#     regex = re.compile('[\U00010000-\U0010ffff]')
-# except re.error:
-#     # UCS-2
-#     regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
+try:
+    # UCS-4
+    regex = re.compile('[\U00010000-\U0010ffff]')
+except re.error:
+    # UCS-2
+    regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
 
 
 class S2manager(BaseDMsql):
@@ -68,7 +68,7 @@ class S2manager(BaseDMsql):
 
                         LEMAS MEDIUMTEXT
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -83,7 +83,7 @@ class S2manager(BaseDMsql):
                         influentialCitationCount SMALLINT UNSIGNED,
                         ESP_affiliation TINYINT(1)
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -97,7 +97,7 @@ class S2manager(BaseDMsql):
                         FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
                         FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -119,7 +119,7 @@ class S2manager(BaseDMsql):
                         venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         venue VARCHAR(300)
                         
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -128,7 +128,7 @@ class S2manager(BaseDMsql):
                         journalNameID SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         journalName VARCHAR(300)
                         
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -211,9 +211,9 @@ class S2manager(BaseDMsql):
             """
             if 'year' in paperEntry.keys():
                 paper_list = [paperEntry['id'],
-                          paperEntry['title'].replace('\\\\','\\'),
-                          paperEntry['title'].replace('\\\\','\\'),
-                          paperEntry['paperAbstract'].replace('\\\\','\\'),
+                          regex.sub(' ', paperEntry['title']),
+                          regex.sub(' ', paperEntry['title'].lower()),
+                          regex.sub(' ', paperEntry['paperAbstract']),
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
@@ -230,12 +230,9 @@ class S2manager(BaseDMsql):
                           ]
             else:
                 paper_list = [paperEntry['id'],
-                          # regex.sub(' ', paperEntry['title']),
-                          # regex.sub(' ', paperEntry['title'].lower()),
-                          # regex.sub(' ', paperEntry['paperAbstract']),
-                          paperEntry['title'].replace('\\\\','\\'),
-                          paperEntry['title'].replace('\\\\','\\'),
-                          paperEntry['paperAbstract'].replace('\\\\','\\'),
+                          regex.sub(' ', paperEntry['title']),
+                          regex.sub(' ', paperEntry['title'].lower()),
+                          regex.sub(' ', paperEntry['paperAbstract']),
                           '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
