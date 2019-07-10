@@ -326,12 +326,9 @@ class S2manager(BaseDMsql):
             cite_list = []
             for el in paperEntry['outCitations']:
                 try:
-                    ipdb.set_trace()
-                    cite_list.append([S2_to_ID[paperEntry['id']], S2_to_ID[el]] 
-                                for el in paperEntry['outCitations'])
+                    cite_list.append([S2_to_ID[paperEntry['id']], S2_to_ID[el]])
                 except:
-                    ipdb.set_trace()
-
+                    pass
             return cite_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
