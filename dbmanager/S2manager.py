@@ -75,6 +75,10 @@ class S2manager(BaseDMsql):
         sql_cmd = """CREATE TABLE S2authors(
 
                         authorID VARCHAR(10) PRIMARY KEY,
+                        ORCIDID VARCHAR(20),
+                        ORCID_givename VARCHAR(40),
+                        ORCID_familyname VARCHAR(100),
+                        SCOPUSID BIGINT(20),
                         name VARCHAR(256),
                         influentialCitationCount SMALLINT UNSIGNED,
                         ESP_affiliation TINYINT(1)
