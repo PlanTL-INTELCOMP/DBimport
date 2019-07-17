@@ -394,7 +394,7 @@ class S2manager(BaseDMsql):
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
         print('\n')
         bar = Bar('Filling in authorship information ... ', max=len(gz_files))
-        for fileno, gzf in enumerate(gz_files[-2:]):
+        for fileno, gzf in enumerate(gz_files[-3:-2]):
             bar.next()
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -405,6 +405,7 @@ class S2manager(BaseDMsql):
                     lista_author_paper += process_Authorship(paper)
                     
                 #Populate tables with the new data
+                self.deleteFromTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
                 self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
 
         return
