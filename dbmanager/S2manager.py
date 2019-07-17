@@ -405,7 +405,7 @@ class S2manager(BaseDMsql):
                     lista_author_paper += process_Authorship(paper)
                     
                 #Populate tables with the new data
-                self.deleteFromTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
+                #self.deleteFromTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
                 self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
 
         return
