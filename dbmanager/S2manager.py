@@ -44,7 +44,7 @@ class S2manager(BaseDMsql):
                         title VARCHAR(300),
                         lowertitle VARCHAR(300),
                         paperAbstract TEXT,
-                        entities TEXT,
+                        #entities TEXT,
 
                         s2PdfUrl VARCHAR(77),
                         pdfUrls MEDIUMTEXT,
@@ -66,9 +66,10 @@ class S2manager(BaseDMsql):
                         ESP_contri TINYINT(1),
                         AIselection TINYINT(1),
 
+                        langid VARCHAR(3),
                         LEMAS MEDIUMTEXT
 
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -83,7 +84,16 @@ class S2manager(BaseDMsql):
                         influentialCitationCount SMALLINT UNSIGNED,
                         ESP_affiliation TINYINT(1)
 
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+
+        self._c.execute(sql_cmd)
+
+        sql_cmd = """CREATE TABLE S2entities(
+
+                        entityID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        entityname VARCHAR(100)
+
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -99,7 +109,21 @@ class S2manager(BaseDMsql):
                         FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
                         FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
 
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+
+        self._c.execute(sql_cmd)
+
+        sql_cmd = """CREATE TABLE PaperEntitity(
+
+                        paperID INT UNSIGNED,
+                        entityID INT UNSIGNED,
+
+                        PRIMARY KEY (paperID, entityID),
+
+                        FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
+                        FOREIGN KEY (entityID) REFERENCES S2entities (entityID)
+
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -121,7 +145,7 @@ class S2manager(BaseDMsql):
                         venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         venue VARCHAR(300)
                         
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -130,7 +154,7 @@ class S2manager(BaseDMsql):
                         journalNameID SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         journalName VARCHAR(300)
                         
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -146,10 +170,11 @@ class S2manager(BaseDMsql):
         Only author and paper data will be imported
         """
         #STEP 1
-        #We need to pass through all data files first to import venues and journalNames
+        #We need to pass through all data files first to import venues, journalNames and entities
         #We populate also the authors table
         all_venues = []
         all_journals = []
+        all_entities = []
         author_counts = Counter()
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
@@ -165,6 +190,12 @@ class S2manager(BaseDMsql):
                 all_venues = list(set(all_venues))
                 all_journals += [el['journalName'] for el in papers_infile]
                 all_journals = list(set(all_journals))
+                # We extract all entities, and flatten before getting rid of repetitions
+                # Flatenning is necessary because each paper has a list of entities
+                entities_in_file = [el['entities'] for el in papers_infile]
+                entities_in_file = [item for sublist in entities_in_file for item in sublist]
+                all_entities += entities_in_file
+                all_entities = list(set(all_entities))
 
                 list_authors = []
                 for el in papers_infile:
@@ -178,8 +209,10 @@ class S2manager(BaseDMsql):
         # We sort data in alphabetical order and insert in table
         all_venues.sort()
         all_journals.sort()
+        all_entities.sort()
         self.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
         self.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
+        self.insertInTable('S2entities', 'entityname', [[el] for el in all_entities])
 
         # We insert author data in table but we need to get rid of duplicated ids
         id_name_count = [[el[0], el[1], author_counts[el]] for el in author_counts]
@@ -216,7 +249,7 @@ class S2manager(BaseDMsql):
                           regex.sub(' ', paperEntry['title']),
                           regex.sub(' ', paperEntry['title'].lower()),
                           regex.sub(' ', paperEntry['paperAbstract']),
-                          '\t'.join(paperEntry['entities']),
+                          #'\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
                           paperEntry['year'],
@@ -235,7 +268,7 @@ class S2manager(BaseDMsql):
                           regex.sub(' ', paperEntry['title']),
                           regex.sub(' ', paperEntry['title'].lower()),
                           regex.sub(' ', paperEntry['paperAbstract']),
-                          '\t'.join(paperEntry['entities']),
+                          #'\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
                           9999,
@@ -266,7 +299,7 @@ class S2manager(BaseDMsql):
 
                 #Populate tables with the new data
                 self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-                    'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
+                    'paperAbstract', 's2PdfUrl', 'pdfUrls', 'year',
                     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
                     'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
                     chunksize=50000, verbose=True)
@@ -408,6 +441,66 @@ class S2manager(BaseDMsql):
                     
                 #Populate tables with the new data
                 self.insertInTable('PaperAuthor', ['paperID', 'authorID'], lista_author_paper, chunksize=100000, verbose=True)
+
+        return
+
+    def importEntities(self, data_files):
+        """Imports Entities associated to each paper"""
+
+        # First, we need to create a dictionary to access the paperID 
+        # corresponding to each S2paperID
+        print('Generating S2 to ID dictionary')
+
+        chunksize = 100000
+        cont = 0
+        S2_to_ID = {}
+        df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
+                               filterOptions='paperID>0', orderOptions='paperID ASC')
+        while len(df):
+            cont = cont+len(df)
+            #Next time, we will read from the largest retrieved ID. This is the
+            #last element of the dataframe, given that we requested an ordered df
+            smallest_id = df['paperID'][0]
+            largest_id = df['paperID'][len(df)-1]
+            print('Number of elements processed:', cont)
+            print('Last Id read:', largest_id)
+            ID_to_S2_list = df.values.tolist()
+            S2_to_ID_list = [[el[1], el[0]] for el in ID_to_S2_list]
+            aux_dict = dict(S2_to_ID_list)
+            S2_to_ID = {**S2_to_ID, **aux_dict}
+            df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
+                    filterOptions = 'paperID>'+str(largest_id), orderOptions='paperID ASC')
+
+        # We extract also a dictionary with entities values
+        df = self.readDBtable('S2entities', selectOptions='entityname, entityID')
+        entities_dict = dict(df.values.tolist())        
+
+        # A pass through all data files is needed to fill in table PaperAuthor
+
+        def process_Entities(paperEntry):
+            """This function takes a dictionary with paper information as input
+            and returns a list ready to insert in PaperEntity
+            """
+            entities_list = [[S2_to_ID[paperEntry['id']], entities_dict[el]] 
+                            for el in paperEntry['entities']]
+
+            return entities_list
+
+        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
+        print('\n')
+        bar = Bar('Filling in entities information ... ', max=len(gz_files))
+        for fileno, gzf in enumerate(gz_files):
+            bar.next()
+            with gzip.open(gzf, 'rt', encoding='utf8') as f:
+                papers_infile = f.read().replace('}\n{','},{')
+                papers_infile = json.loads('['+papers_infile+']')
+
+                lista_entity_paper = []
+                for paper in papers_infile:
+                    lista_entity_paper += process_Entities(paper)
+                    
+                #Populate tables with the new data
+                self.insertInTable('PaperEntity', ['paperID', 'entityID'], lista_entity_paper, chunksize=100000, verbose=True)
 
         return
 

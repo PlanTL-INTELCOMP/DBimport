@@ -3,9 +3,10 @@
 dbCONNECTOR = mysql
 dbUSER = PTLprojects
 dbPASS = Kts93_u17a
-dbSERVER = vanir.tsc.uc3m.es
+#dbSERVER = vanir.tsc.uc3m.es
+dbSERVER = localhost
 
 [SemanticScholar]
 dbNAME = db_Pu_S2
-data_files = /export/usuarios_ml4ds/jarenas/github/DBimport/data_Pu_S2/20190131/
-
+#data_files = /export/usuarios_ml4ds/jarenas/github/DBimport/data_Pu_S2/20190131/
+data_files = /media/Data_jarenas/github/DBimport/data_Pu_S2/

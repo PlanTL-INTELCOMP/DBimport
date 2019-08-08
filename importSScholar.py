@@ -18,7 +18,8 @@ from dbmanager.S2manager import S2manager
 
 #from lemmatizer.ENlemmatizer import ENLemmatizer
 
-def main(resetDB=False, importData=False, importCitations=False, importAuthorship=False):
+def main(resetDB=False, importData=False, importCitations=False, importAuthorship=False,
+         importEntities=False):
     """
     """
 
@@ -76,6 +77,13 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
         print('Importing authorship data ...')
         DB.importAuthorship(data_files)
 
+    ####################################################
+    # 6. If activated, entities associated to each paper
+    # will be imported from S2 data files
+    if importEntities:
+        print('Importing entities associated to each paper ...')
+        DB.importEntities(data_files)
+
 
     return
 
@@ -111,7 +119,8 @@ if __name__ == "__main__":
     parser.add_argument('--importData', action='store_true', help='If activated, import author and paper data')
     parser.add_argument('--importCitations', action='store_true', help='If activated, import citation data')
     parser.add_argument('--importAuthorship', action='store_true', help='If activated, import authorship data')
+    parser.add_argument('--importEntities', action='store_true', help='If activated, import entities data')
     args = parser.parse_args()
 
-    main(resetDB=args.resetDB, importData=args.importData, 
-         importCitations=args.importCitations, importAuthorship=args.importAuthorship)
+    main(resetDB=args.resetDB, importData=args.importData, importCitations=args.importCitations, 
+         importAuthorship=args.importAuthorship, importEntities=args.importEntities)
