@@ -106,6 +106,9 @@ venv.bak/
 # mac
 .DS_Store
 
+#local config file
+config.cf
+
 #data files
 data_*
 
