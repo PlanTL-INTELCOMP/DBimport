@@ -41,8 +41,8 @@ class S2manager(BaseDMsql):
                         paperID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         S2paperID CHAR(40),
                         
-                        title VARCHAR(300),
-                        lowertitle VARCHAR(300),
+                        title VARCHAR(320),
+                        lowertitle VARCHAR(320),
                         paperAbstract TEXT,
                         #entities TEXT,
 
@@ -69,7 +69,7 @@ class S2manager(BaseDMsql):
                         langid VARCHAR(3),
                         LEMAS MEDIUMTEXT
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -84,7 +84,7 @@ class S2manager(BaseDMsql):
                         influentialCitationCount SMALLINT UNSIGNED,
                         ESP_affiliation TINYINT(1)
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -93,7 +93,7 @@ class S2manager(BaseDMsql):
                         entityID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         entityname VARCHAR(100)
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -109,7 +109,7 @@ class S2manager(BaseDMsql):
                         FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
                         FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -123,7 +123,7 @@ class S2manager(BaseDMsql):
                         FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
                         FOREIGN KEY (entityID) REFERENCES S2entities (entityID)
 
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -145,7 +145,7 @@ class S2manager(BaseDMsql):
                         venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         venue VARCHAR(300)
                         
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
@@ -154,7 +154,7 @@ class S2manager(BaseDMsql):
                         journalNameID SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                         journalName VARCHAR(300)
                         
-                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"""
+                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
         self._c.execute(sql_cmd)
 
