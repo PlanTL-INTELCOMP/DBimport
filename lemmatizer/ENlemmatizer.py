@@ -10,6 +10,8 @@ import re
 import requests
 import json
 import langid
+from nltk.tokenize import sent_tokenize
+
 import ipdb
 
 
@@ -95,7 +97,6 @@ class ENLemmatizer (object):
         :removenumbers: If true, tokens that can be converted to numbers will be removed
         :verbose: Display info for strings that cannot be lemmatized
         """
-
         if rawtext==None or rawtext=='':
             return ''
         elif langid.classify(rawtext)[0]!='en':
@@ -129,6 +130,14 @@ class ENLemmatizer (object):
                 if verbose:
                     print('Cannot Lemmatize:', rawtext)
                 return ''
+
+
+    def extractEnglishSentences(self, rawtext):
+        """Function to extract the English sentences in a string
+        :param rawtext: string that we want to clean
+        """
+        sentences = sent_tokenize(rawtext, 'english')
+        return ' '.join([el for el in sentences if langid.classify(el)[0]=='en'])
 
 
     def processENstr(self, text, keepsentence=True, removenumbers=True):

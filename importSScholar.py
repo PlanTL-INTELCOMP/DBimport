@@ -117,7 +117,8 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
             print('Number of articles processed:', cont)
             print('Last Article Id read:', largest_id)
             for el in df.values.tolist():
-                lemas = ENLM.lemmatize(el[1]+' '+el[2], POS=POS, removenumbers=True)
+                lemas = ENLM.extractEnglishSentences(el[1]+' '+el[2])
+                lemas = ENLM.lemmatize(lemas, POS=POS, removenumbers=True)
             #     self.insertInTable('SCOPUS', columns, values)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
