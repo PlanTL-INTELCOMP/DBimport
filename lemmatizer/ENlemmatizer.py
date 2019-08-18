@@ -29,22 +29,14 @@ class ENLemmatizer (object):
     - lemmatize: Function that extracts lemmas from a string
                  (applies stopword removal and equivalent words as indicated
                   during object initialization; optionally remove numbers)
-
-
-
-
-    processESstr: Full processing of string. Includes the following stages:
-        1. If keepsentence=True, The returned string will separate the original
-           strings with \n
-        2. Tokenization of each sentence
-        3. Lemmatization (with removal/addition of tildes as selected)
-        4. Stopwords removal
-        5. Ngram identification
-        6. Replacing equivalences
-        7. If selected, remove numbers
-
-        Steps 2-5 are implemented using the REST API of the Ontology group at UPM
-
+    - lemmatizeBatch: Function to lemmatize a batch of strings
+                      in the format: [[ID, text], [], ...]
+                    For each string to lemmatize the following steps are carried out:
+                    1. English text extraction
+                    2. If keepsentence is true a token separating sentences is introduced
+                    3. Lemmatization
+                    4. If keepsentence is true the token is replaced by \n
+                    5. Return a list in the format [[ID, lemas], [], ...]
     =====================================================
     """
 
@@ -93,9 +85,9 @@ class ENLemmatizer (object):
                     removenumbers=True, verbose=False):
         """Function to lemmatize a string
         :param rawtext: string with the text to lemmatize
-        :POS: Part of Speech that will be kept
-        :removenumbers: If true, tokens that can be converted to numbers will be removed
-        :verbose: Display info for strings that cannot be lemmatized
+        :param POS: Part of Speech that will be kept
+        :param removenumbers: If true, tokens that can be converted to numbers will be removed
+        :param verbose: Display info for strings that cannot be lemmatized
         """
         if rawtext==None or rawtext=='':
             return ''
@@ -132,77 +124,48 @@ class ENLemmatizer (object):
                 return ''
 
 
-    def extractEnglishSentences(self, rawtext):
+    def lemmatizeBatch(self, IDTextList, POS='"NOUN", "VERB", "ADJECTIVE"', 
+                    removenumbers=True, keepSentence=True, verbose=False):
+        """Function to lemmatize a batch of strings
+        :param IDTextList: A list of lists or duples, in the format: [[ID, text], [], ...]
+        :param POS: Part of Speech that will be kept
+        :param removenumbers: If true, tokens that can be converted to numbers will be removed
+        :param keepSentence: If true, sentences will be separated by '\n' 
+        :param verbose: Display info for strings that cannot be lemmatized
+
+        For each string to lemmatize the following steps are carried out:
+        1. English text extraction
+        2. If keepsentence is true a token separating sentences is introduced
+        3. Lemmatization
+        4. If keepsentence is true the token is replaced by \n
+        5. Return a list in the format [[ID, lemas], [], ...]
+        """
+        def doAll(IDtext):
+            ID = IDtext[0]
+            rawtext = IDtext[1]
+            rawtext = self.__extractEnglishSentences(rawtext)
+            if keepSentence:
+                sentences = sent_tokenize(rawtext, 'english')
+                separator = ' newsentence' + str(ID) + ' '
+                rawtext = separator.join(sentences)
+            lemas = self.lemmatize(rawtext, POS=POS, 
+                removenumbers=removenumbers, verbose=verbose)
+            if keepSentence:
+                lemas = lemas.replace(separator, '\n')
+            return lemas
+
+        IDLemasList = []
+        for el in IDTextList:
+            IDLemasList.append([el[0], doAll(el)])
+        return IDLemasList
+
+
+    def __extractEnglishSentences(self, rawtext):
         """Function to extract the English sentences in a string
         :param rawtext: string that we want to clean
         """
         sentences = sent_tokenize(rawtext, 'english')
         return ' '.join([el for el in sentences if langid.classify(el)[0]=='en'])
-
-
-    def processENstr(self, text, keepsentence=True, removenumbers=True):
-        """
-        Full processing of English string. The following operations will be
-        carried out on the selected string
-        This function is only intended for English strings, weird things can
-        happen for other languages
-        1. If keepsentence=True, The returned string will separate the original
-           strings with \n
-        2. Tokenization of each sentence
-        3. Lemmatization (with removal/addition of tildes as selected)
-        4. Stopwords removal
-        5. Ngram identification
-        6. Replacing equivalences
-        7. If selected, remove numbers
-        :param text: The string to process
-        :param keepsentence: If True, sentences will be separated by \n
-        :param removenumbers: If True, tokens which are purely numbers will
-                              also be removed
-        """
-
-        if text==None or text=='':
-            return ''
-        else:
-            # 1. Detect sentences
-            if keepsentence:
-                strlist = sent_tokenize(text, 'english')
-            else:
-                strlist = [text]
-
-            lematizedlist = []
-
-            try:
-                for el in strlist:
-
-                    data = '''{ "filter": [ "NOUN", "VERB", "ADJECTIVE" ],
-                                 "multigrams": true,
-                                 "references": false,
-                                 "text": "'''+ el +'''"}'''
-
-                    response = requests.post(self.__url, headers=self.__headers, data=str(data).encode('utf-8'))
-                    
-                    if (response.ok):
-                        # 2. and 3. and 5. Tokenization and lemmatization and N-gram detection
-                        resp = json.loads(response.text)
-                        texto = [x['token']['lemma'] for x in resp['annotatedText']]
-                        # 4. Stopwords Removal
-                        texto = ' '.join(
-                            [word for word in texto if not word in self.__stopwords])
-                        # 6. Make equivalences according to dictionary
-                        if self.__useunigrams:
-                            texto = self.__pattern_unigrams.sub(
-                                lambda x: self.__unigramdictio[x.group()], texto)
-                        # 7. Removenumbers if activated
-                        if removenumbers:
-                            texto = ' '.join(
-                                [word for word in texto.split() if not
-                                 self.__is_number(word)])
-
-                        lematizedlist.append(texto)
-            except:
-                print('No se puede lematizar el resumen:', text)
-
-            return '\n'.join(lematizedlist)
 
 
     def __loadStopFile(self, file):
@@ -215,13 +178,13 @@ class ENLemmatizer (object):
 
         return list(set([word.strip() for word in stopw if word]))
 
+
     def __loadEQFile(self, file):
         """Function to load equivalences from a file. The equivalence file
         will contain an equivalence per line in the format original : target
         where original will be changed to target after lemmatization
         :param file: The file to read the equivalences from
         """
-
         unigrams = []
         with open(file, 'r', encoding='utf-8') as f:
             unigramlines = f.read().splitlines()

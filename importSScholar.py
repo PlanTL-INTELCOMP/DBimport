@@ -116,9 +116,12 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
             largest_id = df['paperID'][len(df)-1]
             print('Number of articles processed:', cont)
             print('Last Article Id read:', largest_id)
-            for el in df.values.tolist():
-                lemas = ENLM.extractEnglishSentences(el[1]+' '+el[2])
-                lemas = ENLM.lemmatize(lemas, POS=POS, removenumbers=True)
+
+            df['alltext'] = df['title'] + '. ' + df['paperAbstract']
+            lemasBatch = ENLM.lemmatizeBatch(df[['paperID', 'alltext']].values.tolist(),
+            	POS=POS, removenumbers=True, keepSentence=True)
+            print('Longitud de vuelta:', len(lemasBatch))
+            print(lemasBatch[7])
             #     self.insertInTable('SCOPUS', columns, values)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
