@@ -12,14 +12,13 @@ import argparse
 import configparser
 
 from dbmanager.S2manager import S2manager
+from lemmatizer.ENlemmatizer import ENLemmatizer
 
-#from tika import parser as tikaparser
-#from bs4 import BeautifulSoup
-
-#from lemmatizer.ENlemmatizer import ENLemmatizer
+import ipdb
+import time
 
 def main(resetDB=False, importData=False, importCitations=False, importAuthorship=False,
-         importEntities=False):
+         importEntities=False, lemmatize=False, lemmas_query=None):
     """
     """
 
@@ -84,8 +83,57 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
         print('Importing entities associated to each paper ...')
         DB.importEntities(data_files)
 
+    ####################################################
+    # 7. If activated, will carry out lemmas extraction for the
+    # imported papers
+    if lemmatize:
+        print('Lemmatizing Titles and Abstracts ...')
+
+        #Now we start the heavy part. To avoid collapsing the server, we will 
+        #read and process in chunks of 100000 articles
+        chunksize = 500
+        cont = 0
+        lemmas_server = cf.get('Lemmatizer', 'server')
+        stw_file = cf.get('Lemmatizer', 'stw_file')
+        dict_eq_file = cf.get('Lemmatizer', 'dict_eq_file')
+        POS = cf.get('Lemmatizer', 'POS')
+
+        #Initialize lemmatizer
+        ENLM = ENLemmatizer(lemmas_server, stw_file, dict_eq_file)
+        selectOptions = 'paperID, title, paperAbstract'
+        if lemmas_query:
+            filterOptions = 'paperID>0 AND ' + lemmas_query
+        else:
+            filterOptions = 'paperID>0'
+        init_time = time.time()
+        df = DB.readDBtable('S2papers', limit=chunksize, selectOptions=selectOptions,
+                 filterOptions = filterOptions, orderOptions='paperID ASC')
+        while (len(df) and cont<5000):
+            cont = cont+len(df)
+            
+            #Next time, we will read from the largest paperID. This is the
+            #last element of the dataframe, given that we requested an ordered df
+            largest_id = df['paperID'][len(df)-1]
+            print('Number of articles processed:', cont)
+            print('Last Article Id read:', largest_id)
+            for el in df.values.tolist():
+                lemas = ENLM.lemmatize(el[1]+' '+el[2], POS=POS, removenumbers=True)
+            #     self.insertInTable('SCOPUS', columns, values)
+            if lemmas_query:
+                filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
+            else:
+                filterOptions = 'paperID>' + str(largest_id)
+            df = DB.readDBtable('S2papers', limit=chunksize, selectOptions=selectOptions,
+                 filterOptions = filterOptions, orderOptions='paperID ASC')
+        elapsed_time = time.time() - init_time
+        print('Elapsed Time (seconds):', elapsed_time)
 
     return
+
+
+
+
+
 
 
     # # ####################################################
@@ -120,7 +168,11 @@ if __name__ == "__main__":
     parser.add_argument('--importCitations', action='store_true', help='If activated, import citation data')
     parser.add_argument('--importAuthorship', action='store_true', help='If activated, import authorship data')
     parser.add_argument('--importEntities', action='store_true', help='If activated, import entities data')
+    parser.add_argument('--lemmatize', action='store_true', help='If activated, lemmatize database')
+    parser.add_argument('--lemmas_query', type=str, dest='lemmas_query', help='Query for DB elements to lemmatize')
+    parser.set_defaults(lemmas_query=None)
     args = parser.parse_args()
 
     main(resetDB=args.resetDB, importData=args.importData, importCitations=args.importCitations, 
-         importAuthorship=args.importAuthorship, importEntities=args.importEntities)
+         importAuthorship=args.importAuthorship, importEntities=args.importEntities,
+         lemmatize=args.lemmatize, lemmas_query=args.lemmas_query)
