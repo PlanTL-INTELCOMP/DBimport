@@ -122,6 +122,7 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
             	POS=POS, removenumbers=True, keepSentence=True)
             print('Longitud de vuelta:', len(lemasBatch))
             print(lemasBatch[7])
+            ipdb.set_trace()
             #     self.insertInTable('SCOPUS', columns, values)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
