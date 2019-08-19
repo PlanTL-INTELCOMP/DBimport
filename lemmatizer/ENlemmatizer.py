@@ -143,7 +143,7 @@ class ENLemmatizer (object):
         """
 
         pool = multiprocessing.Pool(processes=1)
-        IDLemasList = pool.map(self.doAll, [el[1] for el in IDTextList])
+        IDLemasList = pool.map(self.doAll, IDTextList)
         pool.close()
         pool.join()
 
