@@ -91,7 +91,7 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
 
         #Now we start the heavy part. To avoid collapsing the server, we will 
         #read and process in chunks of 100000 articles
-        chunksize = 500
+        chunksize = 50
         cont = 0
         lemmas_server = cf.get('Lemmatizer', 'server')
         stw_file = cf.get('Lemmatizer', 'stw_file')

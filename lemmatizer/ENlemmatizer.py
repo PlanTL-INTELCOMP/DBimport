@@ -13,6 +13,7 @@ import langid
 from nltk.tokenize import sent_tokenize
 
 import ipdb
+import multiprocessing
 
 
 class ENLemmatizer (object):
@@ -140,24 +141,29 @@ class ENLemmatizer (object):
         4. If keepsentence is true the token is replaced by \n
         5. Return a list in the format [[ID, lemas], [], ...]
         """
-        def doAll(IDtext):
-            ID = IDtext[0]
-            rawtext = IDtext[1]
-            rawtext = self.__extractEnglishSentences(rawtext)
-            if keepSentence:
-                sentences = sent_tokenize(rawtext, 'english')
-                separator = ' newsentence' + str(ID) + ' '
-                rawtext = separator.join(sentences)
-            lemas = self.lemmatize(rawtext, POS=POS, 
-                removenumbers=removenumbers, verbose=verbose)
-            if keepSentence:
-                lemas = lemas.replace(separator, '\n')
-            return lemas
 
-        IDLemasList = []
-        for el in IDTextList:
-            IDLemasList.append([el[0], doAll(el)])
+        pool = multiprocessing.Pool(processes=1)
+        IDLemasList = pool.map(self.doAll, [el[1] for el in IDTextList])
+        pool.close()
+        pool.join()
+
+        # IDLemasList = []
+        # for el in IDTextList:
+        #     IDLemasList.append([el[0], doAll(el)])
         return IDLemasList
+
+    def doAll(self, IDtext):
+        ID = IDtext[0]
+        rawtext = IDtext[1]
+        rawtext = self.__extractEnglishSentences(rawtext)
+        if True:
+            sentences = sent_tokenize(rawtext, 'english')
+            separator = ' newsentence' + str(ID) + ' '
+            rawtext = separator.join(sentences)
+        lemas = self.lemmatize(rawtext)
+        if True:
+            lemas = lemas.replace(separator, '\n')
+        return [ID, lemas]
 
 
     def __extractEnglishSentences(self, rawtext):
