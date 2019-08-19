@@ -163,10 +163,6 @@ class ENLemmatizer (object):
         lemas = self.lemmatize(rawtext)
         if True:
             lemas = lemas.replace(separator, '\n')
-        print(IDtext[1])
-        print(rawtext)
-        print(lemas)
-
         return [ID, lemas]
 
 
