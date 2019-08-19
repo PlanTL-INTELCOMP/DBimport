@@ -127,7 +127,7 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
                                                 processes=concurrent_posts)
             print('Longitud de vuelta:', len(lemasBatch))
             print(lemasBatch[7])
-            # self.insertInTable('SCOPUS', columns, values)
+            DB.setField('S2papers', 'paperID', ['LEMAS'], lemasBatch)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
             else:
