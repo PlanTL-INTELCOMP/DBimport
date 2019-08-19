@@ -113,7 +113,7 @@ class S2manager(BaseDMsql):
 
         self._c.execute(sql_cmd)
 
-        sql_cmd = """CREATE TABLE PaperEntitity(
+        sql_cmd = """CREATE TABLE PaperEntity(
 
                         paperID INT UNSIGNED,
                         entityID INT UNSIGNED,

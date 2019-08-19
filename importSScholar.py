@@ -91,15 +91,20 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
 
         #Now we start the heavy part. To avoid collapsing the server, we will 
         #read and process in chunks of 100000 articles
-        chunksize = 50
+        chunksize = 500
         cont = 0
         lemmas_server = cf.get('Lemmatizer', 'server')
         stw_file = cf.get('Lemmatizer', 'stw_file')
         dict_eq_file = cf.get('Lemmatizer', 'dict_eq_file')
         POS = cf.get('Lemmatizer', 'POS')
+        concurrent_posts = int(cf.get('Lemmatizer', 'concurrent_posts'))
+        removenumbers = cf.get('Lemmatizer', 'removenumbers') == 'True'
+        keepSentence = cf.get('Lemmatizer', 'keepSentence') == 'True'
 
         #Initialize lemmatizer
-        ENLM = ENLemmatizer(lemmas_server, stw_file, dict_eq_file)
+        ENLM = ENLemmatizer(lemmas_server=lemmas_server, stw_file=stw_file,
+                    dict_eq_file=dict_eq_file, POS=POS, removenumbers=removenumbers,
+                    keepSentence=keepSentence)
         selectOptions = 'paperID, title, paperAbstract'
         if lemmas_query:
             filterOptions = 'paperID>0 AND ' + lemmas_query
@@ -119,11 +124,10 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
 
             df['alltext'] = df['title'] + '. ' + df['paperAbstract']
             lemasBatch = ENLM.lemmatizeBatch(df[['paperID', 'alltext']].values.tolist(),
-            	POS=POS, removenumbers=True, keepSentence=True)
+                                                processes=concurrent_posts)
             print('Longitud de vuelta:', len(lemasBatch))
             print(lemasBatch[7])
-            ipdb.set_trace()
-            #     self.insertInTable('SCOPUS', columns, values)
+            # self.insertInTable('SCOPUS', columns, values)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
             else:
@@ -134,35 +138,6 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
         print('Elapsed Time (seconds):', elapsed_time)
 
     return
-
-
-
-
-
-
-
-    # # ####################################################
-    # # 3. Lematización de textos en inglés
-    # if lemmatize:
-    #     enLM = ENLemmatizer(generic_stw, specific_stw)
-    #     df = DB.readDBtable('projects',limit=None,selectOptions='rcn, title, objective, report')
-    #     allprojects = df.values.tolist()
-
-    #     #Chunks for monitoring progress and writing in the database
-    #     lchunk = 10
-    #     nproyectos = len(allprojects)
-    #     bar = Bar('Lemmatizing English Descriptions', max=1+nproyectos/lchunk)
-
-    #     allLEMAS = []
-    #     for index,x in enumerate(allprojects):
-    #         if not (index+1)%lchunk:
-    #             DB.setField('projects', 'rcn', 'LEMAS_UC3M_ENG', allLEMAS)
-    #             allLEMAS = []
-    #             bar.next()
-    #         allLEMAS.append((x[0], enLM.processENstr(x[1]) + ' ***** ' + enLM.processENstr(x[2]) + \
-    #                          ' ***** ' + enLM.processENstr(x[3]) ))
-    #     bar.finish()
-    #     DB.setField('proyectos', 'rcn', 'LEMAS_UC3M_ENG', allLEMAS)
 
 
 if __name__ == "__main__":

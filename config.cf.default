@@ -10,3 +10,13 @@ dbSERVER = localhost
 dbNAME = db_Pu_S2
 #data_files = /export/usuarios_ml4ds/jarenas/github/DBimport/data_Pu_S2/20190131/
 data_files = /media/Data_jarenas/github/DBimport/data_Pu_S2/
+
+[Lemmatizer]
+server = http://localhost:7777/en/annotations/
+stw_file = ./lemmatizer/lemafiles/stopwords/stop-words-english5.txt
+dict_eq_file =
+POS = "NOUN", "VERB", "ADJECTIVE"
+removenumbers = True
+keepSentence = True
+concurrent_posts = 1
+
