@@ -142,7 +142,7 @@ class ENLemmatizer (object):
         5. Return a list in the format [[ID, lemas], [], ...]
         """
 
-        pool = multiprocessing.Pool(processes=1)
+        pool = multiprocessing.Pool(processes=10)
         IDLemasList = pool.map(self.doAll, IDTextList)
         pool.close()
         pool.join()
