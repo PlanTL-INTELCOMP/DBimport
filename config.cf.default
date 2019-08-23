@@ -13,6 +13,7 @@ data_files = /media/Data_jarenas/github/DBimport/data_Pu_S2/
 
 [Lemmatizer]
 server = http://localhost:7777/en/annotations/
+#server = http://librairy.linkeddata.es/nlp/annotations/
 stw_file = ./lemmatizer/lemafiles/stopwords/stop-words-english5.txt
 dict_eq_file =
 POS = "NOUN", "VERB", "ADJECTIVE"

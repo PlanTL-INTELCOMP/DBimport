@@ -44,7 +44,7 @@ class S2manager(BaseDMsql):
                         title VARCHAR(320),
                         lowertitle VARCHAR(320),
                         paperAbstract TEXT,
-                        #entities TEXT,
+                        entities TEXT,
 
                         s2PdfUrl VARCHAR(77),
                         pdfUrls MEDIUMTEXT,
@@ -249,7 +249,7 @@ class S2manager(BaseDMsql):
                           regex.sub(' ', paperEntry['title']),
                           regex.sub(' ', paperEntry['title'].lower()),
                           regex.sub(' ', paperEntry['paperAbstract']),
-                          #'\t'.join(paperEntry['entities']),
+                          '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
                           paperEntry['year'],
@@ -268,7 +268,7 @@ class S2manager(BaseDMsql):
                           regex.sub(' ', paperEntry['title']),
                           regex.sub(' ', paperEntry['title'].lower()),
                           regex.sub(' ', paperEntry['paperAbstract']),
-                          #'\t'.join(paperEntry['entities']),
+                          '\t'.join(paperEntry['entities']),
                           paperEntry['s2PdfUrl'],
                           '\t'.join(paperEntry['pdfUrls']),
                           9999,
@@ -299,7 +299,7 @@ class S2manager(BaseDMsql):
 
                 #Populate tables with the new data
                 self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-                    'paperAbstract', 's2PdfUrl', 'pdfUrls', 'year',
+                    'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
                     'venueID', 'journalNameID', 'journalVolume', 'journalPages',
                     'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
                     chunksize=50000, verbose=True)
@@ -498,7 +498,8 @@ class S2manager(BaseDMsql):
                 lista_entity_paper = []
                 for paper in papers_infile:
                     lista_entity_paper += process_Entities(paper)
-                    
+                lista_entity_paper = list(set([tuple(el) for el in lista_entity_paper]))
+
                 #Populate tables with the new data
                 self.insertInTable('PaperEntity', ['paperID', 'entityID'], lista_entity_paper, chunksize=100000, verbose=True)
 

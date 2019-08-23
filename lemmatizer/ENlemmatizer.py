@@ -14,6 +14,8 @@ from nltk.tokenize import sent_tokenize
 
 import ipdb
 import multiprocessing
+import time
+import re
 
 
 class ENLemmatizer (object):
@@ -89,10 +91,13 @@ class ENLemmatizer (object):
         return
 
 
-    def lemmatize(self, rawtext, verbose=False):
+    def lemmatize(self, rawtext, verbose=True, port=None):
         """Function to lemmatize a string
         :param rawtext: string with the text to lemmatize
         :param verbose: Display info for strings that cannot be lemmatized
+        :param port: If port is not None, replace '7777' by indicated port
+                     This is necessary for the current parallel implementation
+                     since the service fails to run with multiple threads
         """
         if rawtext==None or rawtext=='':
             return ''
@@ -103,11 +108,22 @@ class ENLemmatizer (object):
         else:
             rawtext = rawtext.replace('\n',' ').replace('"', '').replace('\\','')
             data = '''{ "filter": [ '''+ self.__POS +''' ],
+                                 "lang": "en",
                                  "multigrams": true,
                                  "references": false,
                                  "text": "'''+ rawtext +'''"}'''
-            response = requests.post(self.__url, headers=self.__headers, data=str(data).encode('utf-8'))
+            try:
+                if port:
+                    response = requests.post(self.__url.replace('7777', str(port)), headers=self.__headers, data=str(data).encode('utf-8'))
+                else:
+                    response = requests.post(self.__url, headers=self.__headers, data=str(data).encode('utf-8'))
+            except:
+                print('Error processing request at the lemmatization service, port:', str(port))
+                #sleep for 5 seconds to allow the container to restart
+                time.sleep(1)
+                return ''
 
+            #print(port, response)
             if (response.ok):
                 # 2. and 3. and 5. Tokenization and lemmatization and N-gram detection
                 resp = json.loads(response.text)
@@ -150,7 +166,13 @@ class ENLemmatizer (object):
             rawtext = separator.join(sentences)
         lemas = self.lemmatize(rawtext)
         if self.__keepSentence:
-            lemas = lemas.replace(separator, '\n')
+            #Regular expression for replacing back. For instance, it couuld
+            #be something like r'[\s\_]newsentence217([\s\_]newsentence217)*[\s\_]'
+            #means that we will search for one or several repetitions of the separator
+            #string separated by spaces and/or underscores (necessary for ngrams)
+            separator = 'newsentence' + str(ID)
+            regexp = r'[\s\_]*'+separator+r'([\s\_]'+separator+r')*[\s\_]*'
+            lemas = re.sub(regexp, '\n', lemas)
         return [ID, lemas]
 
 
@@ -174,6 +196,89 @@ class ENLemmatizer (object):
         pool.close()
         pool.join()
         return IDLemasList
+
+
+    # def cleanAndLemmatize_tmp(self, IDtext):
+    #     """Function to clean and lemmatize a string
+    #     :param IDtext: A list or duple, in the format: [ID, text]
+
+    #     :Returns: A list with two elements, in the format: [ID, lemas]
+
+    #     For each string to lemmatize the following steps are carried out:
+    #     1. English text extraction
+    #     2. If keepsentence is true a token separating sentences is introduced
+    #     3. Lemmatization
+    #     4. If keepsentence is true the token is replaced by \n
+    #     """
+
+    #     """=================================================================
+    #     This is a temp version necessary until the NLPAIlibrary runs in 
+    #     parallel correctly, with multiple threads
+    #     ================================================================="""
+    #     port = IDtext[0]
+    #     IDTextList = IDtext[1]
+    #     lemasList = []
+
+    #     for elm in IDTextList:
+    #         ID = elm[0]
+    #         rawtext = elm[1]
+    #         rawtext = self.__extractEnglishSentences(rawtext)
+    #         if self.__keepSentence:
+    #             sentences = sent_tokenize(rawtext, 'english')
+    #             separator = ' newsentence' + str(ID) + ' '
+    #             rawtext = separator.join(sentences)
+    #         lemas = self.lemmatize(rawtext, port=port)
+    #         if self.__keepSentence:
+    #             #Regular expression for replacing back. For instance, it couuld
+    #             #be something like r'[\s\_]*newsentence217([\s\_]newsentence217)*[\s\_]*'
+    #             #means that we will search for one or several repetitions of the separator
+    #             #string separated by spaces and/or underscores (necessary for ngrams)
+    #             separator = 'newsentence' + str(ID)
+    #             regexp = r'[\s\_]*'+separator+r'([\s\_]'+separator+r')*[\s\_]*'
+    #             lemas = re.sub(regexp, '\n', lemas)
+    #         lemasList.append([ID, lemas])
+    #     return lemasList
+
+
+    # def lemmatizeBatch_tmp(self, IDTextList, processes=1, verbose=False):
+    #     """Function to lemmatize a batch of strings
+    #     :param IDTextList: A list of lists or duples, in the format: [[ID, text], [], ...]
+    #     :param processes: Number of concurrent posts to the lemmatization service
+    #     :param verbose: Display info for strings that cannot be lemmatized
+
+    #     :Returns: A list of lists in the format [[ID, lemas], [], ...]
+
+    #     For each string to lemmatize the following steps are carried out:
+    #     1. English text extraction
+    #     2. If keepsentence is true a token separating sentences is introduced
+    #     3. Lemmatization
+    #     4. If keepsentence is true the token is replaced by \n
+    #     5. Return a list in the format [[ID, lemas], [], ...]
+    #     """
+
+    #     """=================================================================
+    #     This is a temp version necessary until the NLPAIlibrary runs in 
+    #     parallel correctly, with multiple threads
+    #     ================================================================="""
+
+    #     #Since service currently do not parallelize, we need to create
+    #     #n_processes sublists, so that each worker runs on a different list
+    #     #and zip that with the port that needs to be used
+    #     #
+    #     #Inconvenient is that the speed will be that of the slower worker
+    #     def chunkify(lst,n):
+    #         return [lst[i::n] for i in range(n)]
+    #     sublists = chunkify(IDTextList, processes)
+    #     ports = [7777+el for el in range(processes)]
+    #     newIDTextList = list(zip(ports, sublists)) 
+
+    #     pool = multiprocessing.Pool(processes=processes)
+    #     IDLemasList = pool.map(self.cleanAndLemmatize_tmp, newIDTextList)
+    #     pool.close()
+    #     pool.join()
+    #     #return flattenlist
+    #     IDLemasList = [item for sublist in IDLemasList for item in sublist]
+    #     return IDLemasList
 
 
     def __extractEnglishSentences(self, rawtext):

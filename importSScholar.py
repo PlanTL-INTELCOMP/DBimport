@@ -90,8 +90,8 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
         print('Lemmatizing Titles and Abstracts ...')
 
         #Now we start the heavy part. To avoid collapsing the server, we will 
-        #read and process in chunks of 100000 articles
-        chunksize = 500
+        #read and process in chunks of N articles
+        chunksize = 25000
         cont = 0
         lemmas_server = cf.get('Lemmatizer', 'server')
         stw_file = cf.get('Lemmatizer', 'stw_file')
@@ -113,7 +113,7 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
         init_time = time.time()
         df = DB.readDBtable('S2papers', limit=chunksize, selectOptions=selectOptions,
                  filterOptions = filterOptions, orderOptions='paperID ASC')
-        while (len(df) and cont<5000):
+        while (len(df)):
             cont = cont+len(df)
             
             #Next time, we will read from the largest paperID. This is the
@@ -125,17 +125,15 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
             df['alltext'] = df['title'] + '. ' + df['paperAbstract']
             lemasBatch = ENLM.lemmatizeBatch(df[['paperID', 'alltext']].values.tolist(),
                                                 processes=concurrent_posts)
-            print('Longitud de vuelta:', len(lemasBatch))
-            print(lemasBatch[7])
-            #DB.setField('S2papers', 'paperID', ['LEMAS'], lemasBatch)
+            DB.setField('S2papers', 'paperID', ['LEMAS'], lemasBatch)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
             else:
                 filterOptions = 'paperID>' + str(largest_id)
             df = DB.readDBtable('S2papers', limit=chunksize, selectOptions=selectOptions,
                  filterOptions = filterOptions, orderOptions='paperID ASC')
-        elapsed_time = time.time() - init_time
-        print('Elapsed Time (seconds):', elapsed_time)
+            elapsed_time = time.time() - init_time
+            print('Elapsed Time (seconds):', time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
 
     return
 
