@@ -125,6 +125,8 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
             df['alltext'] = df['title'] + '. ' + df['paperAbstract']
             lemasBatch = ENLM.lemmatizeBatch(df[['paperID', 'alltext']].values.tolist(),
                                                 processes=concurrent_posts)
+            #Remove entries that where not lemmatized correctly
+            lemasBatch = [el for el in lemasBatch if len(el[1])]
             DB.setField('S2papers', 'paperID', ['LEMAS'], lemasBatch)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query

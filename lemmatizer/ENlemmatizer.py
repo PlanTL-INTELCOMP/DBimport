@@ -20,7 +20,7 @@ import tqdm
 #For monitoring progress of Batch lemmatization
 #Cannot define it as member of ENLemmatizer class because
 #it will not serialize correctly for multiprocessing
-tqdm = tqdm.tqdm(total=100)
+tqdm = tqdm.tqdm(total=100, mininterval=5)
 tqdm.clear()
 
 class ENLemmatizer (object):
@@ -197,9 +197,7 @@ class ENLemmatizer (object):
         4. If keepsentence is true the token is replaced by \n
         5. Return a list in the format [[ID, lemas], [], ...]
         """
-        tqdm.reset(total=len(IDTextList))
-        tqdm.miniters=len(IDTextList)/100
-        tqdm.dynamic_miniters=False
+        tqdm.reset(total=len(IDTextList)/processes)
         pool = multiprocessing.Pool(processes=processes)
         IDLemasList = pool.map(self.cleanAndLemmatize, IDTextList)
         pool.close()
