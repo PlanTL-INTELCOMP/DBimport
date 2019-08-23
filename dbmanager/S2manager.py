@@ -11,7 +11,7 @@ Created on Jul 7 2019
 import os
 import pandas as pd
 import numpy as np
-from progress.bar import Bar
+import tqdm
 import gzip
 import json
 import ipdb
@@ -178,9 +178,10 @@ class S2manager(BaseDMsql):
         author_counts = Counter()
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        bar = Bar('Extracting all venues, journalNames, and valid authors', max=len(gz_files))
+        print('Extracting all venues, journalNames, and valid authors')
+        bar = tqdm.tqdm(total=len(gz_files))
         for fileno, gzf in enumerate(gz_files):
-            bar.next()
+            bar.update(1)
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
@@ -286,11 +287,11 @@ class S2manager(BaseDMsql):
             return paper_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        print('\n')
-        bar = Bar('Filling in the paper table', max=len(gz_files))
+        print('Filling in the paper table')
+        bar = tqdm.tqdm(total=len(gz_files))
         current_paper = 0
         for fileno, gzf in enumerate(gz_files):
-            bar.next()
+            bar.update(1)
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
@@ -371,10 +372,10 @@ class S2manager(BaseDMsql):
             return cite_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        print('\n')
-        bar = Bar('Filling in citations ...', max=len(gz_files))
+        print('Filling in citations ...')
+        bar = tqdm.tqdm(total=len(gz_files))
         for fileno, gzf in enumerate(gz_files):
-            bar.next()
+            bar.update(1)
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
@@ -427,10 +428,10 @@ class S2manager(BaseDMsql):
             return author_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        print('\n')
-        bar = Bar('Filling in authorship information ... ', max=len(gz_files))
+        print('Filling in authorship information ... ')
+        bar = tqdm.tqdm(total=len(gz_files))
         for fileno, gzf in enumerate(gz_files):
-            bar.next()
+            bar.update(1)
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
@@ -487,10 +488,10 @@ class S2manager(BaseDMsql):
             return entities_list
 
         gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        print('\n')
-        bar = Bar('Filling in entities information ... ', max=len(gz_files))
+        print('Filling in entities information ... ')
+        bar = tqdm.tqdm(total=len(gz_files))
         for fileno, gzf in enumerate(gz_files):
-            bar.next()
+            bar.update(1)
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
                 papers_infile = json.loads('['+papers_infile+']')
