@@ -112,6 +112,7 @@ class ENLemmatizer (object):
             return ''
         else:
             rawtext = rawtext.replace('\n',' ').replace('"', '').replace('\\','')
+            rawtext = rawtext.replace('{','').replace('}','')
             data = '''{ "filter": [ '''+ self.__POS +''' ],
                                  "lang": "en",
                                  "multigrams": true,
