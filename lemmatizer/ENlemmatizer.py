@@ -96,7 +96,7 @@ class ENLemmatizer (object):
         return
 
 
-    def lemmatize(self, rawtext, verbose=True, port=None):
+    def lemmatize(self, rawtext, verbose=False, port=None):
         """Function to lemmatize a string
         :param rawtext: string with the text to lemmatize
         :param verbose: Display info for strings that cannot be lemmatized

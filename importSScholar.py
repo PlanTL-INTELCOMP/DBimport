@@ -17,6 +17,21 @@ from lemmatizer.ENlemmatizer import ENLemmatizer
 import ipdb
 import time
 
+
+import re
+
+try:
+    # UCS-4
+    regex = re.compile('[\U00010000-\U0010ffff]')
+except re.error:
+    # UCS-2
+    regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
+
+
+def clean_utf8(rawdata):
+    return regex.sub(' ', rawdata)
+
+
 def main(resetDB=False, importData=False, importCitations=False, importAuthorship=False,
          importEntities=False, lemmatize=False, lemmas_query=None):
     """
@@ -123,10 +138,12 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
             print('Last Article Id read:', largest_id)
 
             df['alltext'] = df['title'] + '. ' + df['paperAbstract']
+            df['alltext'] = df['alltext'].apply(clean_utf8)
             lemasBatch = ENLM.lemmatizeBatch(df[['paperID', 'alltext']].values.tolist(),
                                                 processes=concurrent_posts)
             #Remove entries that where not lemmatized correctly
-            lemasBatch = [el for el in lemasBatch if len(el[1])]
+            lemasBatch = [[el[0], clean_utf8(el[1])] for el in lemasBatch if len(el[1])]
+            print('Successful lemmatized documents:', len(lemasBatch))
             DB.setField('S2papers', 'paperID', ['LEMAS'], lemasBatch)
             if lemmas_query:
                 filterOptions = 'paperID>' + str(largest_id) + ' AND ' + lemmas_query
