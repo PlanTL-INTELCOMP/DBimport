@@ -7,9 +7,9 @@ Each dataset can be imported using a different python script with specific optio
 Note that we do not provide the original data for any of the datasets. Therefore, users will need to obtain the data from the source providers, and it will be their responsability to comply with any copyright or use limitations imposed by the data owners.
 
 
-# Quick Installation instructions
+# Quick Start
 
-1. Apart from forking the repository make sure the `dbmanager` submodule code is retrieved by executing
+1. Apart from forking the repository, make sure that the `dbmanager` submodule code is retrieved by executing
 
 ```
 git submodule init
@@ -20,8 +20,21 @@ git submodule init
 3. Other python libraries that are used in the repository are listed in the `requirements.txt` file
 
 
+# Configuration file
+
+
 # Datasets
 
 ## Semantic Scholar
 
-Semantic Scholar (S2) is a database of 45+ scientific publications provided as a bunch of JSON files. Semantic Scholar [open data](https://api.semanticscholar.org/corpus/) can be used 
+Semantic Scholar (S2) is a database of more than 45 M scientific publications, including abstract, author information, recognized entities and some additional bibliographic metadata. Apart from a REST API service, S2 provides an [open data](https://api.semanticscholar.org/corpus/) collection in JSON format. 
+
+In order to import the S2 data you need to run the `importSScholar.py` script with one or several of the following options
+
+    * resetDB: If activated, the database will be reset and the schema will be regenerated
+    * importData: Import author and paper metadata
+    * importCitations: import citation data
+    * importAuthorship: Fill in a paper vs author table
+    * importEntities: Fill in a paper vs entity table
+    * lemmatize: lemmatize database
+    * lemmas_query', type=str, dest='lemmas_query', help='Query for DB elements to lemmatize')
