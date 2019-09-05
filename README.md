@@ -31,10 +31,11 @@ Semantic Scholar (S2) is a database of more than 45 M scientific publications, i
 
 In order to import the S2 data you need to run the `importSScholar.py` script with one or several of the following options
 
-    * resetDB: If activated, the database will be reset and the schema will be regenerated
-    * importData: Import author and paper metadata
-    * importCitations: import citation data
-    * importAuthorship: Fill in a paper vs author table
-    * importEntities: Fill in a paper vs entity table
-    * lemmatize: lemmatize database
-    * lemmas_query', type=str, dest='lemmas_query', help='Query for DB elements to lemmatize')
+   * resetDB: If activated, the database will be reset and the schema will be regenerated
+   * importData: Import author and paper metadata
+   * importCitations: import citation data
+   * importAuthorship: Fill in a paper vs author table
+   * importEntities: Fill in a paper vs entity table
+   * lemmatize: lemmatize database
+   * lemmas_query: Use this flag followed by an SQL query to select the paper abstracts that will be lemmatized
+                   E.g.: >> python importSScholar.py --lemmatize --lemmas_query "DBLP=1 and LEMAS is NULL"
