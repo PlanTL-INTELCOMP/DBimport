@@ -4,6 +4,8 @@ This repository provides code for importing different open datasets into corresp
 
 Each dataset can be imported using a different python script with specific options that are intrinsic to the structure of the database as described below.
 
+Note that we do not provide the original data for any of the datasets. Therefore, users will need to obtain the data from the source providers, and it will be their responsability to comply with any copyright or use limitations imposed by the data owners.
+
 
 # Quick Installation instructions
 
@@ -15,4 +17,11 @@ git submodule init
 
 2. Most of the datasets provide an option to lemmatize the textual fields, which is a necessary step before training other machine learning models based either on Bags of Words or TFIDF. Inside this project we use the [librAIry](https://github.com/librairy/nlp) lemmatization service. If you are planning to use this service, you will need to deploy it using the instructions provided in that repository.
 
-3. Other python libraries that are used in the repository are listed in the requirements.txt file
+3. Other python libraries that are used in the repository are listed in the `requirements.txt` file
+
+
+# Datasets
+
+## Semantic Scholar
+
+Semantic Scholar (S2) is a database of 45+ scientific publications provided as a bunch of JSON files. Semantic Scholar [open data](https://api.semanticscholar.org/corpus/) can be used 
