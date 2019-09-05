@@ -19,8 +19,10 @@ git submodule init
 
 3. Other python libraries that are used in the repository are listed in the `requirements.txt` file
 
-
-# Configuration file
+4. Configuration file: Rename file `config.cf.default` to `config.cf`, and update some variables as needed. The configuration file includes several sections:
+   * [DB]: MySQL server address and authentication credentials
+   * [Lemmatizer]: Address of the librAIry REST API, and configuration settings for the lemmatization
+   * [SemanticScholar]: Specific settings for the Semantic Scholar importer
 
 
 # Datasets
@@ -39,4 +41,6 @@ In order to import the S2 data you need to run the `importSScholar.py` script wi
    * lemmatize: lemmatize database
    * lemmas_query: Use this flag followed by an SQL query to select the paper abstracts that will be lemmatized. E.g.: 
    
-    ```   >> python importSScholar.py --lemmatize --lemmas_query "DBLP=1 and LEMAS is NULL" ```
+   ```>> python importSScholar.py --lemmatize --lemmas_query "DBLP=1 and LEMAS is NULL" ```
+
+Detailed information about the database structure and some statistical analysis can be found in the [database documentation](https://github.com/PlanTL-INTELCOMP/DBimport/blob/master/documentation/Pu_S2_description.docx).
