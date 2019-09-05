@@ -39,4 +39,4 @@ In order to import the S2 data you need to run the `importSScholar.py` script wi
    * lemmatize: lemmatize database
    * lemmas_query: Use this flag followed by an SQL query to select the paper abstracts that will be lemmatized. E.g.: 
    
-   ``` >> python importSScholar.py --lemmatize --lemmas_query "DBLP=1 and LEMAS is NULL" ```
+    ```   >> python importSScholar.py --lemmatize --lemmas_query "DBLP=1 and LEMAS is NULL" ```
