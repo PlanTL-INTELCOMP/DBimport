@@ -39,11 +39,14 @@ xml_dir = './data_Law_BOE/XML'
 LEMAS_dir = './data_Law_BOE/LEMAS'
 
 xml_files = [f for f in listdir(xml_dir) if isfile(join(xml_dir, f))]
+already_lematized = [f for f in listdir(LEMAS_dir) if isfile(join(LEMAS_dir, f))]
+already_lematized = set([f.split('.txt')[0] for f in already_lematized])
+xml_files = [f for f in xml_files if f.split('.xml')[0] not in already_lematized]
 
 cont = 0
 for chk in chunks(xml_files, 1000):
-    print('Lematizando', cont, 'de 200')
-    cont+=1
+    print('Procesados', cont, 'de', len(xml_files))
+    cont+=1000
     to_lemmatize = []
 
     for f in chk:
