@@ -129,7 +129,6 @@ class ESLemmatizer (object):
                 time.sleep(1)
                 return ''
 
-            print(response)
             if (response.ok):
                 # 2. and 3. and 5. Tokenization and lemmatization and N-gram detection
                 resp = json.loads(response.text)
