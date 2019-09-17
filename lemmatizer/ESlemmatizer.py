@@ -122,10 +122,10 @@ class ESLemmatizer (object):
                 if port:
                     response = requests.post(self.__url.replace('7777', str(port)), headers=self.__headers, data=str(data).encode('utf-8'))
                 else:
-                    print(data)
+                    print(str(data).encode('utf-8'))
                     print(self.__url)
                     print(self.__headers)
-                    response = requests.post(self.__url, headers=self.__headers, data=data)
+                    response = requests.post(self.__url, headers=self.__headers, data=str(data).encode('utf-8'))
                     print(response)
             except:
                 print('Error processing request at the lemmatization service, port:', str(port))
@@ -174,7 +174,6 @@ class ESLemmatizer (object):
             sentences = sent_tokenize(rawtext, 'spanish')
             separator = ' newsentence' + str(ID) + ' '
             rawtext = separator.join(sentences)
-        print(rawtext)
         lemas = self.lemmatize(rawtext)
         if self.__keepSentence:
             #Regular expression for replacing back. For instance, it couuld
