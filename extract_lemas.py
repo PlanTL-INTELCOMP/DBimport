@@ -63,5 +63,12 @@ for chk in chunks(xml_files, 1000):
     lemasBatch = ESLM.lemmatizeBatch(to_lemmatize, processes=concurrent_posts)
     #Remove entries that where not lemmatized correctly
     lemasBatch = [[el[0], clean_utf8(el[1])] for el in lemasBatch if len(el[1])]
-    ipdb.set_trace()
+    
+    print('Lematizados', len(lemasBatch), 'de', len(to_lemmatize), 'documentos')
+
+    for el in lemasBatch:
+        with open(join(LEMAS_dir, el[0]+'.txt'), 'w', encoding='utf8') as fout:
+            fout.write(el[1])
+
+
     
