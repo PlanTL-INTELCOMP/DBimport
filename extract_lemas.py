@@ -3,6 +3,7 @@ from os.path import isfile, join
 import xml.etree.ElementTree as ET
 import ipdb
 from lemmatizer.ESlemmatizer import ESLemmatizer
+import random
 
 import re
 
@@ -58,6 +59,7 @@ for chk in chunks(xml_files, 1000):
         if all_text:
             to_lemmatize.append([f.split('.xml')[0], clean_utf8(' '.join(all_text))])
 
+    random.shuffle(to_lemmatize)
     lemasBatch = ESLM.lemmatizeBatch(to_lemmatize, processes=concurrent_posts)
     #Remove entries that where not lemmatized correctly
     lemasBatch = [[el[0], clean_utf8(el[1])] for el in lemasBatch if len(el[1])]

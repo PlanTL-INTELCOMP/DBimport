@@ -112,7 +112,7 @@ class ESLemmatizer (object):
             return ''
         else:
             rawtext = rawtext.replace('\n',' ').replace('"', '').replace('\\','')
-            rawtext = rawtext.replace('{','').replace('}','')
+            rawtext = rawtext.replace('{','').replace('}','').replace('/','')
             data = '''{ "filter": [ '''+ self.__POS +''' ],
                                  "lang": "es",
                                  "multigrams": true,
@@ -123,7 +123,6 @@ class ESLemmatizer (object):
                     response = requests.post(self.__url.replace('7777', str(port)), headers=self.__headers, data=str(data).encode('utf-8'))
                 else:
                     response = requests.post(self.__url, headers=self.__headers, data=str(data).encode('utf-8'))
-                    print(response)
             except:
                 print('Error processing request at the lemmatization service, port:', str(port))
                 #sleep for 5 seconds to allow the container to restart
