@@ -25,7 +25,7 @@ lemmas_server = 'http://hator00.tsc.uc3m.es:6100/nlp/annotations/'
 stw_file = './lemmatizer/lemafiles/stopwords/ESstopwords_SNOWBALL.txt'
 dict_eq_file = ''
 POS = '"NOUN", "VERB", "ADJECTIVE"'
-concurrent_posts = 1
+concurrent_posts = 10
 removenumbers = True
 keepSentence = True
 
@@ -58,8 +58,8 @@ for chk in chunks(xml_files, 1000):
         if all_text:
             to_lemmatize.append([f.split('.xml')[0], clean_utf8(' '.join(all_text))])
 
-        lemasBatch = ESLM.lemmatizeBatch(to_lemmatize, processes=concurrent_posts)
-        #Remove entries that where not lemmatized correctly
-        lemasBatch = [[el[0], clean_utf8(el[1])] for el in lemasBatch if len(el[1])]
-        ipdb.set_trace()
+    lemasBatch = ESLM.lemmatizeBatch(to_lemmatize, processes=concurrent_posts)
+    #Remove entries that where not lemmatized correctly
+    lemasBatch = [[el[0], clean_utf8(el[1])] for el in lemasBatch if len(el[1])]
+    ipdb.set_trace()
     

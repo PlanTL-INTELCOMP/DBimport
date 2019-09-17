@@ -172,7 +172,7 @@ class ESLemmatizer (object):
         rawtext = self.__extractSpanishSentences(rawtext)
         if self.__keepSentence:
             sentences = sent_tokenize(rawtext, 'spanish')
-            separator = ' newsentence' + str(ID) + ' '
+            separator = ' newsentencespanish '
             rawtext = separator.join(sentences)
         lemas = self.lemmatize(rawtext)
         if self.__keepSentence:
@@ -180,7 +180,7 @@ class ESLemmatizer (object):
             #be something like r'[\s\_]newsentence217([\s\_]newsentence217)*[\s\_]'
             #means that we will search for one or several repetitions of the separator
             #string separated by spaces and/or underscores (necessary for ngrams)
-            separator = 'newsentence' + str(ID)
+            separator = 'newsentencespanish'
             regexp = r'[\s\_]*'+separator+r'([\s\_]'+separator+r')*[\s\_]*'
             lemas = re.sub(regexp, '\n', lemas)
         tqdm.update(1)
