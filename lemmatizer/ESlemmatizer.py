@@ -122,9 +122,6 @@ class ESLemmatizer (object):
                 if port:
                     response = requests.post(self.__url.replace('7777', str(port)), headers=self.__headers, data=str(data).encode('utf-8'))
                 else:
-                    print(str(data).encode('utf-8'))
-                    print(self.__url)
-                    print(self.__headers)
                     response = requests.post(self.__url, headers=self.__headers, data=str(data).encode('utf-8'))
                     print(response)
             except:
