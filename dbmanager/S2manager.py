@@ -210,10 +210,11 @@ class S2manager(BaseDMsql):
         # We sort data in alphabetical order and insert in table
         all_venues.sort()
         all_journals.sort()
-        all_entities.sort()
         self.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
         self.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
-        self.insertInTable('S2entities', 'entityname', [[el] for el in all_entities])
+        if len(all_entities):
+            all_entities.sort()
+            self.insertInTable('S2entities', 'entityname', [[el] for el in all_entities])
 
         # We insert author data in table but we need to get rid of duplicated ids
         id_name_count = [[el[0], el[1], author_counts[el]] for el in author_counts]
