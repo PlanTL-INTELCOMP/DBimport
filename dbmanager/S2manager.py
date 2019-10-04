@@ -91,7 +91,7 @@ class S2manager(BaseDMsql):
         sql_cmd = """CREATE TABLE S2entities(
 
                         entityID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        entityname VARCHAR(100)
+                        entityname VARCHAR(120)
 
                         ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
@@ -143,7 +143,7 @@ class S2manager(BaseDMsql):
         sql_cmd = """CREATE TABLE S2venues(
 
                         venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        venue VARCHAR(300)
+                        venue VARCHAR(320)
                         
                         ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
@@ -151,8 +151,8 @@ class S2manager(BaseDMsql):
 
         sql_cmd = """CREATE TABLE S2journals(
 
-                        journalNameID SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        journalName VARCHAR(300)
+                        journalNameID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        journalName VARCHAR(320)
                         
                         ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
 
