@@ -9,6 +9,11 @@ dbSERVER = localhost
 dbNAME = db_Pu_S2
 data_files = /media/Data_jarenas/github/DBimport/data_Pu_S2/
 
+[BOE]
+dbNAME = db_Law_BOE
+xml_dir = data_Law_BOE/XML/
+lemas_dir = data_Law_BOE/LEMAS/
+
 [Lemmatizer]
 server = http://localhost:7777/en/annotations/
 #Online demonstration service

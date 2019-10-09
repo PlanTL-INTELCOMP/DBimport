@@ -2,7 +2,7 @@
 Created on Feb25 2019
 @author: Jerónimo Arenas García
 
-Import Semantic Scholar Database to Mongo DB
+Import Semantic Scholar Database to MySQL DB
 
     * Creating database from downloaded gzip files
 
@@ -60,6 +60,9 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
     DB = S2manager (db_name=dbNAME, db_connector=dbCONNECTOR, path2db=None,
                     db_server=dbSERVER, db_user=dbUSER, db_password=dbPASS)
     #               db_port=dbPORT)
+    DB._conn.query('SET GLOBAL connect_timeout=60000')
+    DB._conn.query('SET GLOBAL wait_timeout=60000')
+    DB._conn.query('SET GLOBAL interactive_timeout=60000')
 
     ####################################################
     #2. If activated, remove and create again database tables
