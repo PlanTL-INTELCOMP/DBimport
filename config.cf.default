@@ -4,8 +4,10 @@ dbCONNECTOR = mysql
 dbUSER = 
 dbPASS = 
 dbSERVER = localhost
+#Leave dbSOCKET empty for tcp connection
+dbSOCKET =
 
-[SemanticScholar]
+[S2]
 dbNAME = db_Pu_S2
 data_files = /media/Data_jarenas/github/DBimport/data_Pu_S2/
 

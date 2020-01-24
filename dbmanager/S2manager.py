@@ -35,128 +35,9 @@ class S2manager(BaseDMsql):
         """
         Create DB table structure
         """
+        for sql_cmd in schema:
 
-        sql_cmd = """CREATE TABLE S2papers(
-
-                        paperID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        S2paperID CHAR(40),
-                        
-                        title VARCHAR(320),
-                        lowertitle VARCHAR(320),
-                        paperAbstract TEXT,
-                        entities TEXT,
-
-                        s2PdfUrl VARCHAR(77),
-                        pdfUrls MEDIUMTEXT,
-
-                        year SMALLINT UNSIGNED,
-
-                        venueID MEDIUMINT UNSIGNED,
-                        journalNameID SMALLINT UNSIGNED,
-                        journalVolume VARCHAR(300),
-                        journalPages VARCHAR(100),
-
-                        isDBLP TINYINT(1),
-                        isMedline TINYINT(1),
-
-                        doi VARCHAR(128),
-                        doiUrl VARCHAR(128),
-                        pmid VARCHAR(16),
-
-                        ESP_contri TINYINT(1),
-                        AIselection TINYINT(1),
-
-                        langid VARCHAR(3),
-                        LEMAS MEDIUMTEXT
-
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE S2authors(
-
-                        authorID VARCHAR(10) PRIMARY KEY,
-                        ORCIDID VARCHAR(20),
-                        ORCID_givename VARCHAR(40),
-                        ORCID_familyname VARCHAR(100),
-                        SCOPUSID BIGINT(20),
-                        name VARCHAR(256),
-                        influentialCitationCount SMALLINT UNSIGNED,
-                        ESP_affiliation TINYINT(1)
-
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE S2entities(
-
-                        entityID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        entityname VARCHAR(120)
-
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE PaperAuthor(
-
-                        #ID UNSIGNED INT AUTO_INCREMENT UNIQUE FIRST,
-
-                        paperID INT UNSIGNED,
-                        authorID VARCHAR(10),
-
-                        PRIMARY KEY (paperID, authorID),
-
-                        FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
-                        FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
-
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE PaperEntity(
-
-                        paperID INT UNSIGNED,
-                        entityID INT UNSIGNED,
-
-                        PRIMARY KEY (paperID, entityID),
-
-                        FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
-                        FOREIGN KEY (entityID) REFERENCES S2entities (entityID)
-
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE citations(
-
-                        paperID1 INT UNSIGNED,
-                        paperID2 INT UNSIGNED,
-
-                        PRIMARY KEY (paperID1, paperID2),
-
-                        isInfluential TINYINT(1)
-
-                        )"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE S2venues(
-
-                        venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        venue VARCHAR(320)
-                        
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
-
-        sql_cmd = """CREATE TABLE S2journals(
-
-                        journalNameID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        journalName VARCHAR(320)
-                        
-                        ) CHARACTER SET utf8 COLLATE utf8_general_ci"""
-
-        self._c.execute(sql_cmd)
+        	self._c.execute(sql_cmd)
 
         #Commit changes to database
         self._conn.commit()
@@ -507,3 +388,148 @@ class S2manager(BaseDMsql):
 
         return
 
+"""===============================================================================
+==================================================================================
+
+         *******   *******   *      *   *******   *       *      *
+         *         *         *      *   *         * *   * *     * *
+         *******   *         ********   ****      *   *   *    *   *
+               *   *         *      *   *         *       *   *******
+         *******   *******   *      *   *******   *       *   *     *
+
+==================================================================================
+==============================================================================="""
+
+schema = [
+
+"""CREATE TABLE S2papers(
+
+    paperID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    S2paperID CHAR(40),
+                        
+    title VARCHAR(320),
+    lowertitle VARCHAR(320),
+    paperAbstract TEXT,
+    entities TEXT,
+    fieldsOfStudy TEXT,
+
+    s2PdfUrl VARCHAR(77),
+    pdfUrls MEDIUMTEXT,
+
+    year SMALLINT UNSIGNED,
+
+    journalVolume VARCHAR(300),
+    journalPages VARCHAR(100),
+
+    isDBLP TINYINT(1),
+    isMedline TINYINT(1),
+
+    doi VARCHAR(128),
+    doiUrl VARCHAR(128),
+    pmid VARCHAR(16),
+
+    ESP_contri TINYINT(1),
+    AIselection TINYINT(1),
+
+    langid VARCHAR(3),
+    LEMAS MEDIUMTEXT
+
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
+
+
+"""CREATE TABLE S2authors(
+
+	authorID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    S2authorID VARCHAR(10),
+    orcidID VARCHAR(20),
+    orcidGivenName VARCHAR(40),
+    orcidFamilyName VARCHAR(100),
+    scopusID BIGINT(20),
+    name VARCHAR(256),
+    influentialCitationCount SMALLINT UNSIGNED,
+    ESP_affiliation TINYINT(1)
+
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
+
+
+"""CREATE TABLE S2entities(
+
+    entityID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    entityName VARCHAR(120)
+
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
+
+
+"""CREATE TABLE S2fields(
+
+    fieldID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fieldName VARCHAR(120)
+
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
+
+
+"""CREATE TABLE S2venues(
+
+    venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    venue VARCHAR(320)
+                        
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
+
+
+"""CREATE TABLE S2journals(
+
+    journalNameID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    journalName VARCHAR(320)
+                        
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
+
+
+"""CREATE TABLE paperAuthor(
+
+    #ID UNSIGNED INT AUTO_INCREMENT UNIQUE FIRST,
+
+    paperAuthorID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperID INT UNSIGNED,
+    authorID INT UNSIGNED,
+
+    FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
+    FOREIGN KEY (authorID) REFERENCES S2authors (authorID)
+
+    )""",
+
+
+"""CREATE TABLE paperEntity(
+
+	paperEntityID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperID INT UNSIGNED,
+    entityID INT UNSIGNED,
+
+    FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
+    FOREIGN KEY (entityID) REFERENCES S2entities (entityID)
+
+    )""",
+
+
+"""CREATE TABLE paperField(
+
+	paperFieldID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperID INT UNSIGNED,
+    fieldID INT UNSIGNED,
+
+    FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
+    FOREIGN KEY (fieldID) REFERENCES S2fields (fieldID)
+
+    )""",
+
+
+"""CREATE TABLE citations(
+
+	citationID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperID1 INT UNSIGNED,
+    paperID2 INT UNSIGNED,
+
+    isInfluential TINYINT(1)
+
+    )"""
+
+]
