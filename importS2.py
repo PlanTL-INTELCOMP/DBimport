@@ -26,7 +26,7 @@ def clean_utf8(rawdata):
     return regex.sub(' ', rawdata)
 
 
-def main(resetDB=False, importData=False, importCitations=False, importAuthorship=False,
+def main(resetDB=False, importPapers=False, importCitations=False, importAuthors=False,
          importEntities=False, lemmatize=False, lemmas_query=None):
     """
     """
@@ -43,6 +43,8 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
     dbCONNECTOR = cf.get('DB', 'dbCONNECTOR')
     dbSOCKET = cf.get('DB', 'dbSOCKET')
     dbNAME = cf.get('S2', 'dbNAME')
+    ncpu = int(cf.get('S2', 'ncpu'))
+    chunksize = int(cf.get('S2', 'chunksize'))
 
     #########################
     # Datafiles
@@ -74,9 +76,9 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
     ####################################################
     # 3. If activated, authors and papers data
     # will be imported from S2 data files
-    if importData:
+    if importPapers:
         print('Importing papers data ...')
-        DB.importData(data_files)
+        DB.importPapers(data_files, ncpu, chunksize)
 
     ####################################################
     # 4. If activated, citations data
@@ -88,9 +90,9 @@ def main(resetDB=False, importData=False, importCitations=False, importAuthorshi
     ####################################################
     # 5. If activated, authorship data
     # will be imported from S2 data files
-    if importAuthorship:
+    if importAuthors:
         print('Importing authorship data ...')
-        DB.importAuthorship(data_files)
+        DB.importAuthors(data_files)
 
     ####################################################
     # 6. If activated, entities associated to each paper
@@ -162,15 +164,15 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(prog='importS2')    
     parser.add_argument('--resetDB', action='store_true', help='If activated, the database will be reset and re-created')
-    parser.add_argument('--importData', action='store_true', help='If activated, import author and paper data')
+    parser.add_argument('--importPapers', action='store_true', help='If activated, import author and paper data')
     parser.add_argument('--importCitations', action='store_true', help='If activated, import citation data')
-    parser.add_argument('--importAuthorship', action='store_true', help='If activated, import authorship data')
+    parser.add_argument('--importAuthors', action='store_true', help='If activated, import authorship data')
     parser.add_argument('--importEntities', action='store_true', help='If activated, import entities data')
     parser.add_argument('--lemmatize', action='store_true', help='If activated, lemmatize database')
     parser.add_argument('--lemmas_query', type=str, dest='lemmas_query', help='Query for DB elements to lemmatize')
     parser.set_defaults(lemmas_query=None)
     args = parser.parse_args()
 
-    main(resetDB=args.resetDB, importData=args.importData, importCitations=args.importCitations, 
-         importAuthorship=args.importAuthorship, importEntities=args.importEntities,
+    main(resetDB=args.resetDB, importPapers=args.importPapers, importCitations=args.importCitations, 
+         importAuthors=args.importAuthors, importEntities=args.importEntities,
          lemmatize=args.lemmatize, lemmas_query=args.lemmas_query)

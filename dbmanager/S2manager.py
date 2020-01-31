@@ -11,11 +11,15 @@ Created on Jul 7 2019
 import os
 import pandas as pd
 import numpy as np
-import tqdm
+from tqdm import *
 import gzip
 import json
 import ipdb
+import time
+import langid
+#from utils import get_size
 from collections import Counter
+from multiprocessing import Pool
 
 from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
@@ -27,6 +31,95 @@ try:
 except re.error:
     # UCS-2
     regex = re.compile('[\uD800-\uDBFF][\uDC00-\uDFFF]')
+
+"""Some functions need to be defined outside the class for allowing 
+   parallel processing of the Semantic Scholar files. It is necessary
+   to do so to make pickle serialization work"""
+def ElementInList(source_list, search_string):
+    if search_string in source_list:
+        return 1
+    else:
+        return 0
+
+def process_paper(paperEntry):
+    """This function takes a dictionary with paper information as input
+    and returns a list to insert in S2papers
+    """
+    if 'year' in paperEntry.keys():
+        paper_list = [paperEntry['id'],
+                          regex.sub(' ', paperEntry['title']),
+                          regex.sub(' ', paperEntry['title'].lower()),
+                          regex.sub(' ', paperEntry['paperAbstract']),
+                          '\t'.join(paperEntry['entities']),
+                          '\t'.join(paperEntry['fieldsOfStudy']),
+                          paperEntry['s2PdfUrl'],
+                          '\t'.join(paperEntry['pdfUrls']),
+                          paperEntry['year'],
+                          paperEntry['journalVolume'].strip(),
+                          paperEntry['journalPages'].strip(),
+                          ElementInList(paperEntry['sources'], 'DBLP'),
+                          ElementInList(paperEntry['sources'], 'Medline'),
+                          paperEntry['doi'],
+                          paperEntry['doiUrl'],
+                          paperEntry['pmid']
+                          ]
+    else:
+        paper_list = [paperEntry['id'],
+                          regex.sub(' ', paperEntry['title']),
+                          regex.sub(' ', paperEntry['title'].lower()),
+                          regex.sub(' ', paperEntry['paperAbstract']),
+                          '\t'.join(paperEntry['entities']),
+                          '\t'.join(paperEntry['fieldsOfStudy']),
+                          paperEntry['s2PdfUrl'],
+                          '\t'.join(paperEntry['pdfUrls']),
+                          9999,
+                          paperEntry['journalVolume'].strip(),
+                          paperEntry['journalPages'].strip(),
+                          ElementInList(paperEntry['sources'], 'DBLP'),
+                          ElementInList(paperEntry['sources'], 'Medline'),
+                          paperEntry['doi'],
+                          paperEntry['doiUrl'],
+                          paperEntry['pmid']
+                          ]
+
+    return paper_list
+
+def process_paperFile(gzfile):
+    """Process Semantic Scholar gzip file, and extract a list of
+    journals, a list of venues, a list of fields of study, and a
+    list wih paper information to save in the S2papers table
+    Args:
+    :param gzfil: String containing the name of the file to process
+
+    Returns:
+    A list containing 3 lists: papers in file, unique journals in file,
+    unique venues in file, unique fields in file
+    """
+    with gzip.open(gzfile, 'rt', encoding='utf8') as f:
+        papers_infile = f.read().replace('}\n{','},{')
+    
+    papers_infile = json.loads('['+papers_infile+']')
+
+    # We extract venues and journals, getting rid of repetitions
+    thisfile_venues = [el['venue'] for el in papers_infile]
+    thisfile_venues = list(set(thisfile_venues))
+    thisfile_journals = [el['journalName'] for el in papers_infile]
+    thisfile_journals = list(set(thisfile_journals))
+    # We extract all fields, and flatten before getting rid of repetitions
+    # Flatenning is necessary because each paper has a list of fields
+    thisfile_fields = [el['fieldsOfStudy'] for el in papers_infile]
+    thisfile_fields = [item for sublist in thisfile_fields for item in sublist]
+    thisfile_fields = list(set(thisfile_fields))
+    """
+    Entities are not included in current Semantic Scholar versions
+    # We extract all entities, and flatten before getting rid of repetitions
+    # Flatenning is necessary because each paper has a list of entities
+    thisfile_entities = [el['entities'] for el in papers_infile]
+    thisfile_entities = [item for sublist in thisfile_entities for item in sublist]
+    thisfile_entities = list(set(thisfile_entities))"""    # We extract fields for the S2papers table
+    lista_papers = [process_paper(el) for el in papers_infile]
+
+    return [lista_papers, thisfile_venues, thisfile_journals, thisfile_fields]
 
 
 class S2manager(BaseDMsql):
@@ -44,171 +137,94 @@ class S2manager(BaseDMsql):
 
         return
 
-    def importData(self, data_files):
+    def importPapers(self, data_files, ncpu, chunksize=100000):
         """
         Import data from Semantic Scholar compressed data files
         available at the indicated location
-        Only author and paper data will be imported
+        Only paper data will be imported
         """
         #STEP 1
-        #We need to pass through all data files first to import venues, journalNames and entities
-        #We populate also the authors table
+        #Read and Insert paper data
+        #We need to pass through all data files first to import venues, journalNames, entities
+        #and fields. We populate also the S2papers table
         all_venues = []
         all_journals = []
-        all_entities = []
-        author_counts = Counter()
+        #all_entities = []
+        all_fields = []
 
-        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        print('Extracting all venues, journalNames, and valid authors')
-        bar = tqdm.tqdm(total=len(gz_files))
-        for fileno, gzf in enumerate(gz_files):
-            bar.update(1)
-            with gzip.open(gzf, 'rt', encoding='utf8') as f:
-                papers_infile = f.read().replace('}\n{','},{')
-                papers_infile = json.loads('['+papers_infile+']')
+        print('Filling in table S2papers')
 
-                # We extract venues and journals, getting rid of repetitions
-                all_venues += [el['venue'] for el in papers_infile]
+        gz_files = sorted([data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')])
+
+        if ncpu:
+            #Parallel processing
+            with Pool(ncpu) as p:
+                with tqdm(total = len(gz_files)) as pbar:
+                    for file_data in p.imap(process_paperFile, gz_files):
+                        pbar.update()
+                        #Populate tables with the new data
+                        self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
+                                'paperAbstract', 'entities', 'fieldsOfStudy', 's2PdfUrl',
+                                'pdfUrls', 'year', 'journalVolume', 'journalPages',
+                                'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'],
+                                file_data[0], chunksize=chunksize, verbose=False)
+                        all_venues += file_data[1]
+                        all_venues = list(set(all_venues))
+                        all_journals += file_data[2]
+                        all_journals = list(set(all_journals))
+                        all_fields += file_data[3]
+                        all_fields = list(set(all_fields))
+                        
+            pbar.close()
+            p.close()
+            p.join()
+
+        else:
+
+            pbar = tqdm(total=len(gz_files))
+
+            for gzf in gz_files:
+                pbar.update(1)
+                
+                file_data = process_paperFile(gzf)
+                #Populate tables with the new data
+                self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
+                                'paperAbstract', 'entities', 'fieldsOfStudy', 's2PdfUrl',
+                                'pdfUrls', 'year', 'journalVolume', 'journalPages',
+                                'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'],
+                                file_data[0], chunksize=chunksize, verbose=False)
+                all_venues += file_data[1]
                 all_venues = list(set(all_venues))
-                all_journals += [el['journalName'] for el in papers_infile]
+                all_journals += file_data[2]
                 all_journals = list(set(all_journals))
-                # We extract all entities, and flatten before getting rid of repetitions
-                # Flatenning is necessary because each paper has a list of entities
-                entities_in_file = [el['entities'] for el in papers_infile]
-                entities_in_file = [item for sublist in entities_in_file for item in sublist]
-                all_entities += entities_in_file
-                all_entities = list(set(all_entities))
+                all_fields += file_data[3]
+                all_fields = list(set(all_fields))
 
-                list_authors = []
-                for el in papers_infile:
-                    if len(el['authors']):
-                        for author in el['authors']:
-                            if len(author['ids']):
-                                list_authors.append((author['ids'][0], author['name']))
-
-                author_counts = author_counts + Counter(list_authors)
+            pbar.close()
 
         # We sort data in alphabetical order and insert in table
         all_venues.sort()
         all_journals.sort()
-        self.insertInTable('S2venues', 'venue', [[el] for el in all_venues])
+        all_fields.sort()
+        print('Filling in tables S2venues, S2journals and S2fields')
+        self.insertInTable('S2venues', 'venueName', [[el] for el in all_venues])
         self.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
-        if len(all_entities):
+        self.insertInTable('S2fields', 'fieldName', [[el] for el in all_fields])
+        """if len(all_entities):
             all_entities.sort()
             self.insertInTable('S2entities', 'entityname', [[el] for el in all_entities])
+        """
 
-        # We insert author data in table but we need to get rid of duplicated ids
-        id_name_count = [[el[0], el[1], author_counts[el]] for el in author_counts]
-        df = pd.DataFrame(id_name_count, columns=['id', 'name', 'counts'])
-        #sort according to 'id' and then by 'counts'
-        df.sort_values(by=['id', 'counts'], ascending=False, inplace=True)
-        #We get rid of duplicates, keeping first element (max counts)
-        df.drop_duplicates(subset='id', keep='first', inplace=True)
-        self.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist(), chunksize=100000, verbose=True)
+        return
         
         # We extract venues and journals as dictionaries for inserting new data in tables
-        df = self.readDBtable('S2venues', selectOptions='venue, venueID')
+        df = self.readDBtable('S2venues', selectOptions='venueName, venueID')
         venues_dict = dict(df.values.tolist())
-        df = self.readDBtable('S2journals', selectOptions='journalName, journalNameID')
+        df = self.readDBtable('S2journals', selectOptions='journalName, journalID')
         journals_dict = dict(df.values.tolist())
 
         # STEP 2
         # Now we need to read all files again, this time importing paper data
-        # Note that papers are stored in database with a new index in addition to S2ID
-        # this is useful because it will reduce indexing time and will also reduce
-        # the size of citations and PaperAuthor table to be filled in STEP 3
-        def ElementInList(source_list, search_string):
-            if search_string in source_list:
-                return 1
-            else:
-                return 0
-
-        def process_paper(paperEntry):
-            """This function takes a dictionary with paper information as input
-            and returns a list to insert in S2papers
-            """
-            if 'year' in paperEntry.keys():
-                paper_list = [paperEntry['id'],
-                          regex.sub(' ', paperEntry['title']),
-                          regex.sub(' ', paperEntry['title'].lower()),
-                          regex.sub(' ', paperEntry['paperAbstract']),
-                          '\t'.join(paperEntry['entities']),
-                          paperEntry['s2PdfUrl'],
-                          '\t'.join(paperEntry['pdfUrls']),
-                          paperEntry['year'],
-                          venues_dict[paperEntry['venue']],
-                          journals_dict[paperEntry['journalName']],
-                          paperEntry['journalVolume'].strip(),
-                          paperEntry['journalPages'].strip(),
-                          ElementInList(paperEntry['sources'], 'DBLP'),
-                          ElementInList(paperEntry['sources'], 'Medline'),
-                          paperEntry['doi'],
-                          paperEntry['doiUrl'],
-                          paperEntry['pmid']
-                          ]
-            else:
-                paper_list = [paperEntry['id'],
-                          regex.sub(' ', paperEntry['title']),
-                          regex.sub(' ', paperEntry['title'].lower()),
-                          regex.sub(' ', paperEntry['paperAbstract']),
-                          '\t'.join(paperEntry['entities']),
-                          paperEntry['s2PdfUrl'],
-                          '\t'.join(paperEntry['pdfUrls']),
-                          9999,
-                          venues_dict[paperEntry['venue']],
-                          journals_dict[paperEntry['journalName']],
-                          paperEntry['journalVolume'].strip(),
-                          paperEntry['journalPages'].strip(),
-                          ElementInList(paperEntry['sources'], 'DBLP'),
-                          ElementInList(paperEntry['sources'], 'Medline'),
-                          paperEntry['doi'],
-                          paperEntry['doiUrl'],
-                          paperEntry['pmid']
-                          ]
-
-            return paper_list
-
-        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
-        print('Filling in the paper table')
-        bar = tqdm.tqdm(total=len(gz_files))
-        current_paper = 0
-        for fileno, gzf in enumerate(gz_files):
-            bar.update(1)
-            with gzip.open(gzf, 'rt', encoding='utf8') as f:
-                papers_infile = f.read().replace('}\n{','},{')
-                papers_infile = json.loads('['+papers_infile+']')
-
-                lista_papers = [process_paper(el) for el in papers_infile]
-
-                #Populate tables with the new data
-                self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-                    'paperAbstract', 'entities', 's2PdfUrl', 'pdfUrls', 'year',
-                    'venueID', 'journalNameID', 'journalVolume', 'journalPages',
-                    'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'], lista_papers,
-                    chunksize=50000, verbose=True)
-
-                # Alternative version loading data from file. Slightly faster
-                # but there are some errors deriving from empty fields, etc
-
-                # print('Writing data to file')
-                # temp_file = os.path.join(data_files,'tmpfile.csv')
-                # with open(temp_file, 'w', encoding='utf8') as fout:
-                #     [fout.write('*****'.join(el).replace('\n', '. ') + '\n') for el in lista_papers]
-
-                # sql_cmd = """
-                #     LOAD DATA LOCAL INFILE '%s'
-                #     INTO TABLE S2papers
-                #     FIELDS TERMINATED BY '*****'
-                #     LINES TERMINATED BY '\n'
-                #     (S2paperID, title, lowertitle, paperAbstract, entities, s2PdfUrl, pdfUrls,
-                #      year, venueID, journalNameID, journalVolume, journalPages,
-                #      isDBLP, isMedline, doi, doiUrl, pmid)
-                # """
-                # sql_cmd = sql_cmd %(temp_file)
-                # print(sql_cmd)
-                # self._c.execute(sql_cmd)
-                # self._conn.commit()
-                # os.remove(temp_file)
 
         return
 
@@ -271,8 +287,35 @@ class S2manager(BaseDMsql):
 
         return
 
-    def importAuthorship(self, data_files):
+    def importAuthors(self, data_files):
         """Imports Authorship information"""
+        """
+                thisfile_authors = []
+                thisfile_authors2 = []
+                for el in papers_infile:
+                    if len(el['authors']):
+                        for author in el['authors']:
+                            if len(author['ids']):
+                                thisfile_authors.append((int(author['ids'][0]), author['name']))
+                author_counts = author_counts + Counter(thisfile_authors)
+                print('Finished processing file:', gzfile)
+                #print('Number of authors (str):', len(author_counts), '(', get_size(author_counts)/1e9, 'g )')
+                #print('Number of authors (int):', len(author_counts2), '(', get_size(author_counts2)/1e9, 'g )')
+                #print('Max author id this far:', max([el[0] for el in author_counts2.keys()]))
+                #print('Last iteration time:', time.time()-start)
+                #start=time.time()
+
+        # We insert author data in table but we need to get rid of duplicated ids
+        id_name_count = [[el[0], el[1], author_counts[el]] for el in author_counts]
+        df = pd.DataFrame(id_name_count, columns=['id', 'name', 'counts'])
+        #sort according to 'id' and then by 'counts'
+        df.sort_values(by=['id', 'counts'], ascending=False, inplace=True)
+        #We get rid of duplicates, keeping first element (max counts)
+        df.drop_duplicates(subset='id', keep='first', inplace=True)
+        self.insertInTable('S2authors', ['authorID', 'name'], df[['id', 'name']].values.tolist(), chunksize=100000, verbose=True)
+
+        """
+
 
         # First, we need to create a dictionary to access the paperID 
         # corresponding to each S2paperID
@@ -407,8 +450,8 @@ schema = [
     paperID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     S2paperID CHAR(40),
                         
-    title VARCHAR(320),
-    lowertitle VARCHAR(320),
+    title TEXT,
+    lowertitle TEXT,
     paperAbstract TEXT,
     entities TEXT,
     fieldsOfStudy TEXT,
@@ -425,7 +468,7 @@ schema = [
     isMedline TINYINT(1),
 
     doi VARCHAR(128),
-    doiUrl VARCHAR(128),
+    doiUrl VARCHAR(256),
     pmid VARCHAR(16),
 
     ESP_contri TINYINT(1),
@@ -440,7 +483,7 @@ schema = [
 """CREATE TABLE S2authors(
 
 	authorID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    S2authorID VARCHAR(10),
+    S2authorID INT UNSIGNED,
     orcidID VARCHAR(20),
     orcidGivenName VARCHAR(40),
     orcidFamilyName VARCHAR(100),
@@ -463,7 +506,7 @@ schema = [
 """CREATE TABLE S2fields(
 
     fieldID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    fieldName VARCHAR(120)
+    fieldName VARCHAR(32)
 
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
 
@@ -471,14 +514,14 @@ schema = [
 """CREATE TABLE S2venues(
 
     venueID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    venue VARCHAR(320)
+    venueName VARCHAR(320)
                         
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",
 
 
 """CREATE TABLE S2journals(
 
-    journalNameID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    journalID MEDIUMINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     journalName VARCHAR(320)
                         
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci""",

@@ -5,11 +5,17 @@ dbUSER =
 dbPASS = 
 dbSERVER = localhost
 #Leave dbSOCKET empty for tcp connection
-dbSOCKET =
+dbSOCKET = /var/run/mysqld/mysqld.sock
 
 [S2]
+#Database name. Needs to be created before executing the sript
 dbNAME = db_Pu_S2
 data_files = /media/Data_jarenas/github/DBimport/data_Pu_S2/
+#Number or cores for parallel processing
+#Set to 0 to deactivate parallel processing
+ncpu = 0
+#Size of chunks for paper processing and database ingestion
+chunksize = 100000
 
 [BOE]
 dbNAME = db_Law_BOE
