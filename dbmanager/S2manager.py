@@ -130,7 +130,20 @@ class S2manager(BaseDMsql):
         """
         for sql_cmd in schema:
 
-        	self._c.execute(sql_cmd)
+            self._c.execute(sql_cmd)
+
+        #Commit changes to database
+        self._conn.commit()
+
+        return
+
+    def createDBindices(self):
+        """
+        Create DB table structure
+        """
+        for sql_cmd in indices:
+            print('Creating index:', sql_cmd)
+            self._c.execute(sql_cmd)
 
         #Commit changes to database
         self._conn.commit()
@@ -217,49 +230,27 @@ class S2manager(BaseDMsql):
 
         return
         
-        # We extract venues and journals as dictionaries for inserting new data in tables
-        df = self.readDBtable('S2venues', selectOptions='venueName, venueID')
-        venues_dict = dict(df.values.tolist())
-        df = self.readDBtable('S2journals', selectOptions='journalName, journalID')
-        journals_dict = dict(df.values.tolist())
-
-        # STEP 2
-        # Now we need to read all files again, this time importing paper data
-
-        return
-
-    def importCitations(self, data_files):
+    def importCitations(self, data_files, chunksize):
         """Imports Citation information"""
 
         # First, we need to create a dictionary to access the paperID 
         # corresponding to each S2paperID
         print('Generating S2 to ID dictionary')
 
-        chunksize = 100000
-        cont = 0
         S2_to_ID = {}
-        df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
-                               filterOptions='paperID>0', orderOptions='paperID ASC')
-        while len(df):
-            cont = cont+len(df)
-            #Next time, we will read from the largest retrieved ID. This is the
-            #last element of the dataframe, given that we requested an ordered df
-            smallest_id = df['paperID'][0]
-            largest_id = df['paperID'][len(df)-1]
-            print('Number of elements processed:', cont)
-            print('Last Id read:', largest_id)
+
+        for df in self.readDBchunks('S2papers', 'paperID', chunksize=chunksize,
+                        selectOptions='paperID, S2paperID', verbose=True):
             ID_to_S2_list = df.values.tolist()
             S2_to_ID_list = [[el[1], el[0]] for el in ID_to_S2_list]
             aux_dict = dict(S2_to_ID_list)
             S2_to_ID = {**S2_to_ID, **aux_dict}
-            df = self.readDBtable('S2papers', limit=chunksize, selectOptions='paperID, S2paperID',
-                    filterOptions = 'paperID>'+str(largest_id), orderOptions='paperID ASC')
 
         # A pass through all data files is needed to fill in tables citations
 
         def process_Citations(paperEntry):
             """This function takes a dictionary with paper information as input
-            and a list ready to insert in citations table
+            and returns a list ready to insert in citations table
             """
             cite_list = []
             for el in paperEntry['outCitations']:
@@ -269,10 +260,10 @@ class S2manager(BaseDMsql):
                     pass
             return cite_list
 
-        gz_files = [data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')]
+        gz_files = sorted([data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')])
         print('Filling in citations ...')
-        bar = tqdm.tqdm(total=len(gz_files))
-        for fileno, gzf in enumerate(gz_files):
+        bar = tqdm(total=len(gz_files))
+        for gzf in gz_files:
             bar.update(1)
             with gzip.open(gzf, 'rt', encoding='utf8') as f:
                 papers_infile = f.read().replace('}\n{','},{')
@@ -283,8 +274,82 @@ class S2manager(BaseDMsql):
                     lista_citas += process_Citations(paper)
 
                 #Populate table with the new data
-                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=100000, verbose=True)
+                self.insertInTable('citations', ['paperID1', 'paperID2'], lista_citas, chunksize=chunksize, verbose=True)
+        bar.close()
 
+        del S2_to_ID
+
+        return
+
+    def importFields(self, data_files, chunksize):
+        """Imports Journals, Volumes, and Field of Study associated to each paper"""
+
+        # We extract venues, journals and fields as dictionaries for inserting new data in tables
+        df = self.readDBtable('S2venues', selectOptions='venueName, venueID')
+        venues_dict = dict(df.values.tolist())
+        df = self.readDBtable('S2journals', selectOptions='journalName, journalID')
+        journals_dict = dict(df.values.tolist())
+        df = self.readDBtable('S2fields', selectOptions='fieldName, fieldID')
+        fields_dict = dict(df.values.tolist())
+
+        #Now, we need to create a dictionary to access the paperID 
+        # corresponding to each S2paperID
+        print('Generating S2 to ID dictionary')
+
+        S2_to_ID = {}
+
+        for df in self.readDBchunks('S2papers', 'paperID', chunksize=chunksize,
+                        selectOptions='paperID, S2paperID', verbose=True):
+            ID_to_S2_list = df.values.tolist()
+            S2_to_ID_list = [[el[1], el[0]] for el in ID_to_S2_list]
+            aux_dict = dict(S2_to_ID_list)
+            S2_to_ID = {**S2_to_ID, **aux_dict}
+
+
+        # A pass through all data files is needed to extract the data of interest
+        # and fill in the tables
+
+        def process_Fields(paperEntry):
+            """This function takes a dictionary with paper information as input
+            and returns lists ready to insert in the corresponding tables
+            """
+            fields_list = [[S2_to_ID[paperEntry['id']], fields_dict[el]] 
+                            for el in paperEntry['fieldsOfStudy']]
+            journal_list = [[S2_to_ID[paperEntry['id']], journals_dict[paperEntry['journalName']]]]
+            venues_list = [[S2_to_ID[paperEntry['id']], venues_dict[paperEntry['venue']]]]
+
+            return fields_list, journal_list, venues_list
+
+        gz_files = sorted([data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')])
+        print('Filling in venue, journal and field of study data ...')
+        bar = tqdm(total=len(gz_files))
+        for gzf in gz_files:
+            bar.update(1)
+            with gzip.open(gzf, 'rt', encoding='utf8') as f:
+                papers_infile = f.read().replace('}\n{','},{')
+                papers_infile = json.loads('['+papers_infile+']')
+
+                lista_fields = []
+                lista_journals = []
+                lista_venues = []
+                for paper in papers_infile:
+                    try:
+                        all_lists = process_Fields(paper)
+                    except:
+                        all_lists = [[],[],[]]
+                    lista_fields += all_lists[0]
+                    lista_journals += all_lists[1]
+                    lista_venues += all_lists[2]
+
+                #Populate tables
+                self.insertInTable('paperField', ['paperID', 'fieldID'], lista_fields, chunksize=chunksize, verbose=True)
+                self.insertInTable('paperVenue', ['paperID', 'venueID'], lista_venues, chunksize=chunksize, verbose=True)
+                self.insertInTable('paperJournal', ['paperID', 'journalID'], lista_journals, chunksize=chunksize, verbose=True)
+        bar.close()
+
+        del S2_to_ID
+
+        return
         return
 
     def importAuthors(self, data_files):
@@ -555,24 +620,47 @@ schema = [
 
 """CREATE TABLE paperField(
 
-	paperFieldID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperFieldID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     paperID INT UNSIGNED,
-    fieldID INT UNSIGNED,
-
-    FOREIGN KEY (paperID)  REFERENCES S2papers (paperID),
-    FOREIGN KEY (fieldID) REFERENCES S2fields (fieldID)
+    fieldID INT UNSIGNED
 
     )""",
 
+"""CREATE TABLE paperVenue(
+
+    paperVenueID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperID INT UNSIGNED,
+    venueID INT UNSIGNED
+
+    )""",
+
+"""CREATE TABLE paperJournal(
+
+    paperJournalID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    paperID INT UNSIGNED,
+    journalID INT UNSIGNED
+
+    )""",
 
 """CREATE TABLE citations(
 
-	citationID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    citationID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     paperID1 INT UNSIGNED,
     paperID2 INT UNSIGNED,
 
-    isInfluential TINYINT(1)
+    isInfluential TINYINT(1),
+    MethodIntent TINYINT(1),
+    BackgrIntent TINYINT(1),
+    ResultIntent TINYINT(1)
 
     )"""
+
+]
+
+indices = [
+
+'CREATE INDEX S2id on S2papers (S2paperID)',
+'CREATE INDEX paper1 on citations (paperID1)',
+'CREATE INDEX paper2 on citations (paperID2)'
 
 ]

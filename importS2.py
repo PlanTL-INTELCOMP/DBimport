@@ -26,8 +26,8 @@ def clean_utf8(rawdata):
     return regex.sub(' ', rawdata)
 
 
-def main(resetDB=False, importPapers=False, importCitations=False, importAuthors=False,
-         importEntities=False, lemmatize=False, lemmas_query=None):
+def main(resetDB=False, importPapers=False, importCitations=False, importFields=False,
+		importAuthors=False, importEntities=False, lemmatize=False, lemmas_query=None):
     """
     """
 
@@ -85,7 +85,18 @@ def main(resetDB=False, importPapers=False, importCitations=False, importAuthors
     # will be imported from S2 data files
     if importCitations:
         print('Importing citations data ...')
-        DB.importCitations(data_files)
+        DB.importCitations(data_files, chunksize)
+
+    ####################################################
+    # 5. If activated, journals, volumes, and Fields of Study data
+    # will be imported from S2 data files
+    if importFields:
+        print('Importing journal, volume and Fields of Study data ...')
+        DB.importFields(data_files, chunksize)
+
+
+
+
 
     ####################################################
     # 5. If activated, authorship data
@@ -166,6 +177,7 @@ if __name__ == "__main__":
     parser.add_argument('--resetDB', action='store_true', help='If activated, the database will be reset and re-created')
     parser.add_argument('--importPapers', action='store_true', help='If activated, import author and paper data')
     parser.add_argument('--importCitations', action='store_true', help='If activated, import citation data')
+    parser.add_argument('--importFields', action='store_true', help='If activated, import journals, volumes, fields data')
     parser.add_argument('--importAuthors', action='store_true', help='If activated, import authorship data')
     parser.add_argument('--importEntities', action='store_true', help='If activated, import entities data')
     parser.add_argument('--lemmatize', action='store_true', help='If activated, lemmatize database')
@@ -174,5 +186,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(resetDB=args.resetDB, importPapers=args.importPapers, importCitations=args.importCitations, 
-         importAuthors=args.importAuthors, importEntities=args.importEntities,
+    	 importFields=args.importFields, importAuthors=args.importAuthors, importEntities=args.importEntities,
          lemmatize=args.lemmatize, lemmas_query=args.lemmas_query)

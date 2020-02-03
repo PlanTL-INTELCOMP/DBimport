@@ -1,13 +1,8 @@
 ************ S2papers
 
-venueID MEDIUMINT UNSIGNED,
-journalNameID SMALLINT UNSIGNED,
-
-CREATE index on S2paperID (after table creation)
-
 CREATE fulltext index on LEMAS (after lemas extraction)
 
-Falta crear los campos  ESP_contri y AIselection
+Falta rellenar los campos  ESP_contri y AIselection
 
 
 **************** S2authors
