@@ -21,8 +21,8 @@ git submodule init
 
 4. Configuration file: Rename file `config.cf.default` to `config.cf`, and update some variables as needed. The configuration file includes several sections:
    * [DB]: MySQL server address and authentication credentials
+   * [S2]: Specific settings for the Semantic Scholar importer
    * [Lemmatizer]: Address of the librAIry REST API, and configuration settings for the lemmatization
-   * [SemanticScholar]: Specific settings for the Semantic Scholar importer
 
 
 # Datasets
@@ -34,10 +34,11 @@ Semantic Scholar (S2) is a database of more than 45 M scientific publications, i
 In order to import the S2 data you need to run the `importSScholar.py` script with one or several of the following options
 
    * resetDB: If activated, the database will be reset and the schema will be regenerated
-   * importData: Import author and paper metadata
-   * importCitations: import citation data
-   * importAuthorship: Fill in a paper vs author table
-   * importEntities: Fill in a paper vs entity table
+   * importPapers: Import paper metadata
+   * importCitations: Import Citation data
+   * importAuthors: Import author metadata
+   * importFields: Fill in paper vs (journals/volumes/fieldOfStudy) tables
+   * importEntities: Fill in paper vs Entities table
    * lemmatize: lemmatize database
    * lemmas_query: Use this flag followed by an SQL query to select the paper abstracts that will be lemmatized. E.g.: 
    
