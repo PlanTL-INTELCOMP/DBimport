@@ -46,6 +46,7 @@ def main(download=False, resetDB=False, importData=False,
     dbPASS = cf.get('DB', 'dbPASS')
     dbSERVER = cf.get('DB', 'dbSERVER')
     dbCONNECTOR = cf.get('DB', 'dbCONNECTOR')
+    dbSOCKET = cf.get('DB', 'dbSOCKET')
     dbNAME = cf.get('FIS', 'dbNAME')
 
     #########################
@@ -129,12 +130,12 @@ def main(download=False, resetDB=False, importData=False,
         """Step 2: Download project HTML page for all available projects"""
         for elm in allUrls:
             idProyecto = elm.split('idProyecto=')[1].replace('%2f','_')
-            if os.path.isfile(os.path.join(data_folder, idProyecto+'.txt')):
+            if os.path.isfile(os.path.join(data_folder, idProyecto+'.html')):
                 print('Ya se ha descargado el proyecto:', idProyecto)
             else:
                 browser.get(elm)
                 time.sleep(ttsleep)
-                with open(os.path.join(data_folder, idProyecto+'.txt'), 'w') as fout:
+                with open(os.path.join(data_folder, idProyecto+'.html'), 'w') as fout:
                     fout.write(browser.page_source )
 
         browser.close()
@@ -143,9 +144,16 @@ def main(download=False, resetDB=False, importData=False,
     #2. Database connection
 
     if resetDB or importData or lemmatize:
-        DB = FISmanager (db_name=dbNAME, db_connector=dbCONNECTOR, path2db=None,
+
+        if dbSOCKET:
+            print('socket')
+            DB = FISmanager (db_name=dbNAME, db_connector=dbCONNECTOR, path2db=None,
+                        db_server=dbSERVER, db_user=dbUSER, db_password=dbPASS,
+                        unix_socket=dbSOCKET)
+        else:
+            print('tcp')
+            DB = FISmanager (db_name=dbNAME, db_connector=dbCONNECTOR, path2db=None,
                         db_server=dbSERVER, db_user=dbUSER, db_password=dbPASS)
-        #               db_port=dbPORT)
 
     ####################################################
     #3. If activated, remove and create again database tables
@@ -157,32 +165,12 @@ def main(download=False, resetDB=False, importData=False,
         DB.createDBschema()
 
     ####################################################
-    # 3. If activated, authors and papers data
-    # will be imported from S2 data files
+    # 4. If activated project information will be inserted in the table
     if importData:
-        print('Importing papers data ...')
-        DB.importData(data_files)
+        print('Importing projects data ...')
+        DB.importData(data_folder)
 
-    ####################################################
-    # 4. If activated, citations data
-    # will be imported from S2 data files
-    if importCitations:
-        print('Importing citations data ...')
-        DB.importCitations(data_files)
 
-    ####################################################
-    # 5. If activated, authorship data
-    # will be imported from S2 data files
-    if importAuthorship:
-        print('Importing authorship data ...')
-        DB.importAuthorship(data_files)
-
-    ####################################################
-    # 6. If activated, entities associated to each paper
-    # will be imported from S2 data files
-    if importEntities:
-        print('Importing entities associated to each paper ...')
-        DB.importEntities(data_files)
 
     ####################################################
     # 7. If activated, will carry out lemmas extraction for the

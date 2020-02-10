@@ -14,6 +14,7 @@ import numpy as np
 from tqdm import *
 import ipdb
 import time
+from bs4 import BeautifulSoup
 
 from dbmanager.dbManager.base_dm_sql import BaseDMsql
 
@@ -46,86 +47,51 @@ class FISmanager(BaseDMsql):
 
         return
 
-    def importPapers(self, data_files, ncpu, chunksize=100000):
+    def importData(self, data_folder):
         """
-        Import data from Semantic Scholar compressed data files
-        available at the indicated location
-        Only paper data will be imported
+        Import data from FIS html pages
         """
-        #STEP 1
-        #Read and Insert paper data
-        #We need to pass through all data files first to import venues, journalNames, entities
-        #and fields. We populate also the S2papers table
-        all_venues = []
-        all_journals = []
-        #all_entities = []
-        all_fields = []
+        html_files = sorted([data_folder+el for el in os.listdir(data_folder) if el.endswith('.html')])
+        print('Retrieving data for', len(html_files), 'projects')
 
-        print('Filling in table S2papers')
+        pbar = tqdm(total=len(html_files))
+        all_projects = []
 
-        gz_files = sorted([data_files+el for el in os.listdir(data_files) if el.startswith('s2-corpus')])
+        for file in html_files:
+            pbar.update(1)
+            with open(file, 'r') as fin:
+                contents = fin.read().replace('<br>', '\t')
+                soup = BeautifulSoup(contents, 'lxml')
 
-        if ncpu:
-            #Parallel processing
-            with Pool(ncpu) as p:
-                with tqdm(total = len(gz_files)) as pbar:
-                    for file_data in p.imap(process_paperFile, gz_files):
-                        pbar.update()
-                        #Populate tables with the new data
-                        self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-                                'paperAbstract', 'entities', 'fieldsOfStudy', 's2PdfUrl',
-                                'pdfUrls', 'year', 'journalVolume', 'journalPages',
-                                'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'],
-                                file_data[0], chunksize=chunksize, verbose=False)
-                        all_venues += file_data[1]
-                        all_venues = list(set(all_venues))
-                        all_journals += file_data[2]
-                        all_journals = list(set(all_journals))
-                        all_fields += file_data[3]
-                        all_fields = list(set(all_fields))
-                        
-            pbar.close()
-            p.close()
-            p.join()
+            code = file.split('/')[-1].split('.html')[0]
+            title = soup.h2.text.strip()
+            other_fields = [el.text.strip() for el in soup.findAll('p')]
+            abstract = other_fields[0]
+            keywords = other_fields[1]
+            #Change from Spanish date format to US format
+            startDate = '-'.join(other_fields[2].split(' - ')[0].split('/')[::-1])
+            endDate = '-'.join(other_fields[2].split(' - ')[1].split('/')[::-1])
+            PResearcher = other_fields[3]
+            #Empty researchers appear with a comma to separate empty name and empty surname
+            if PResearcher == ',':
+                PResearcher = ''
+            benCentre = other_fields[4]
+            exeCentre = other_fields[5]
+            CA = other_fields[6]
+            province = other_fields[7]
+            budget = int(other_fields[8].replace('.','').replace(' €',''))
+            
+            all_projects.append([code, title, abstract, keywords, startDate,
+                endDate, PResearcher, benCentre, exeCentre, CA, province, budget])
 
-        else:
+        print('Filling in table FISprojects')
 
-            pbar = tqdm(total=len(gz_files))
-
-            for gzf in gz_files:
-                pbar.update(1)
-                
-                file_data = process_paperFile(gzf)
-                #Populate tables with the new data
-                self.insertInTable('S2papers', ['S2paperID', 'title', 'lowertitle', 
-                                'paperAbstract', 'entities', 'fieldsOfStudy', 's2PdfUrl',
-                                'pdfUrls', 'year', 'journalVolume', 'journalPages',
-                                'isDBLP', 'isMedline', 'doi', 'doiUrl', 'pmid'],
-                                file_data[0], chunksize=chunksize, verbose=False)
-                all_venues += file_data[1]
-                all_venues = list(set(all_venues))
-                all_journals += file_data[2]
-                all_journals = list(set(all_journals))
-                all_fields += file_data[3]
-                all_fields = list(set(all_fields))
-
-            pbar.close()
-
-        # We sort data in alphabetical order and insert in table
-        all_venues.sort()
-        all_journals.sort()
-        all_fields.sort()
-        print('Filling in tables S2venues, S2journals and S2fields')
-        self.insertInTable('S2venues', 'venueName', [[el] for el in all_venues])
-        self.insertInTable('S2journals', 'journalName', [[el] for el in all_journals])
-        self.insertInTable('S2fields', 'fieldName', [[el] for el in all_fields])
-        """if len(all_entities):
-            all_entities.sort()
-            self.insertInTable('S2entities', 'entityname', [[el] for el in all_entities])
-        """
-
+        self.insertInTable('FISprojects', ['FISprojectID', 'title', 'abstract', 
+                'keywords', 'startDate', 'endDate', 'PI', 'beneficiaryCentre',
+                'executionCentre', 'ComunidadAutonoma', 'Province', 'Budget'],
+                all_projects)
+ 
         return
-        
 
 
 """===============================================================================
@@ -145,11 +111,11 @@ schema = [
 """CREATE TABLE FISprojects(
 
     projectID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    S2paperID VARCHAR(32),
+    FISprojectID VARCHAR(32),
                         
-    title TINYTEXT,
+    title MEDIUMTEXT,
     abstract MEDIUMTEXT,
-    keywords TINYTEXT,
+    keywords MEDIUMTEXT,
 
     startDate DATE,
     endDate DATE,
@@ -162,7 +128,7 @@ schema = [
     ComunidadAutonoma VARCHAR(32),
     Province VARCHAR(32),
 
-    Budget MEDIUMINT UNSIGNED
+    Budget MEDIUMINT UNSIGNED,
 
     LEMAS MEDIUMTEXT
 

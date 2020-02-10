@@ -661,6 +661,7 @@ indices = [
 
 'CREATE INDEX S2id on S2papers (S2paperID)',
 'CREATE INDEX paper1 on citations (paperID1)',
-'CREATE INDEX paper2 on citations (paperID2)'
-
+'CREATE INDEX paper2 on citations (paperID2)',
+'CREATE FULLTEXT INDEX pdfurls on S2papers (pdfUrls)',
+'CREATE FULLTEXT INDEX FOS on S2papers (fieldsOfStudy)'
 ]
