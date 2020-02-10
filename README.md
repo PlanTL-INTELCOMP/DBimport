@@ -47,7 +47,7 @@ In order to import the S2 data you need to run the `importS2.py` script with one
 
 Detailed information about the database structure and some statistical analysis can be found in the [database documentation](https://github.com/PlanTL-INTELCOMP/DBimport/blob/master/documentation/Pu_S2_description.docx).
 
-## FIS
+## FIS (Instituto de Salud Carlos III)
 
 FIS (Fondo de Investigación en Salud) is a database of 2607 projects funded by Instituto de Salud Carlos III, including abstract, author information, keywords, duration, budget. Project information is available at [Portal FIS] (https://portalfis.isciii.es/es/Paginas/inicio.aspx). The code provided in this repository is prepared to download project information from the website.
 
@@ -59,5 +59,5 @@ In order to import the FIS data you need to run the `importFIS.py` script with o
    
    ```>> python importFIS.py --download --resetDB --importData ```
 
-Detailed information about the database structure and some statistical analysis can be found in the [database documentation](https://github.com/PlanTL-INTELCOMP/DBimport/blob/master/documentation/Pu_S2_description.docx).
+Detailed information about the database structure and some statistical analysis can be found in the project Wiki.
 
