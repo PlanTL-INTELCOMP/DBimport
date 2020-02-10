@@ -22,6 +22,7 @@ git submodule init
 4. Configuration file: Rename file `config.cf.default` to `config.cf`, and update some variables as needed. The configuration file includes several sections:
    * [DB]: MySQL server address and authentication credentials
    * [S2]: Specific settings for the Semantic Scholar importer
+   * [FIS]: Specific settings for the FIS project importer
    * [Lemmatizer]: Address of the librAIry REST API, and configuration settings for the lemmatization
 
 
@@ -31,7 +32,7 @@ git submodule init
 
 Semantic Scholar (S2) is a database of more than 45 M scientific publications, including abstract, author information, recognized entities and some additional bibliographic metadata. Apart from a REST API service, S2 provides an [open data](https://api.semanticscholar.org/corpus/) collection in JSON format. 
 
-In order to import the S2 data you need to run the `importSScholar.py` script with one or several of the following options
+In order to import the S2 data you need to run the `importS2.py` script with one or several of the following options
 
    * resetDB: If activated, the database will be reset and the schema will be regenerated
    * importPapers: Import paper metadata
@@ -42,6 +43,21 @@ In order to import the S2 data you need to run the `importSScholar.py` script wi
    * lemmatize: lemmatize database
    * lemmas_query: Use this flag followed by an SQL query to select the paper abstracts that will be lemmatized. E.g.: 
    
-   ```>> python importSScholar.py --lemmatize --lemmas_query "isDBLP=1 and LEMAS is NULL" ```
+   ```>> python importS2.py --lemmatize --lemmas_query "isDBLP=1 and LEMAS is NULL" ```
 
 Detailed information about the database structure and some statistical analysis can be found in the [database documentation](https://github.com/PlanTL-INTELCOMP/DBimport/blob/master/documentation/Pu_S2_description.docx).
+
+## FIS
+
+FIS (Fondo de Investigación en Salud) is a database of 2607 projects funded by Instituto de Salud Carlos III, including abstract, author information, keywords, duration, budget. Project information is available at [Portal FIS] (https://portalfis.isciii.es/es/Paginas/inicio.aspx). The code provided in this repository is prepared to download project information from the website.
+
+In order to import the FIS data you need to run the `importFIS.py` script with one or several of the following options
+
+   * download: If activated, project information will be downloaded from the FIS portal
+   * resetDB: If activated, the database will be reset and the schema will be regenerated
+   * importData: Import project metadata
+   
+   ```>> python importFIS.py --download --resetDB --importData ```
+
+Detailed information about the database structure and some statistical analysis can be found in the [database documentation](https://github.com/PlanTL-INTELCOMP/DBimport/blob/master/documentation/Pu_S2_description.docx).
+
